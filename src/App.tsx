@@ -505,6 +505,11 @@ function Skills() {
 
 /* ------------------------------ Projects ----------------------------- */
 
+function openExternal(url: string) {
+  const win = window.open(url, '_blank', 'noopener,noreferrer')
+  if (!win) window.location.href = url
+}
+
 function Projects() {
   const shown = projects.slice(0, 8)
   const [expanded, setExpanded] = useState(false)
@@ -529,8 +534,11 @@ function Projects() {
               <a
                 className={`project-card ${project.highlight ? 'project-card-featured' : ''}`}
                 href={project.github}
-                target="_blank"
-                rel="noreferrer"
+                onClick={(e) => {
+                  e.preventDefault()
+                  openExternal(project.github)
+                }}
+                role="link"
               >
                 <div className="project-top">
                   <span className="project-folder">{project.emoji}</span>
@@ -559,8 +567,11 @@ function Projects() {
             <a
               className="btn btn-primary"
               href={profile.github}
-              target="_blank"
-              rel="noreferrer"
+              onClick={(e) => {
+                e.preventDefault()
+                openExternal(profile.github)
+              }}
+              role="link"
             >
               {icons.github} View All Repositories
             </a>
