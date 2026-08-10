@@ -227,12 +227,6 @@ const dateBadge = (date: string | null) => {
   return `📅 ${y}.${m}.${d}`
 }
 
-const parentPath = (path: string) => {
-  const parts = path.split('/')
-  parts.pop()
-  return parts.join('/')
-}
-
 export default function StudyPage() {
   const [tree, setTree] = useState<TreeNode[] | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -342,20 +336,6 @@ export default function StudyPage() {
   const newer = idx > 0 ? posts[idx - 1] : undefined
   const older = idx >= 0 && idx < posts.length - 1 ? posts[idx + 1] : undefined
 
-  const backAction = () => {
-    if (route.view === 'post') {
-      const parent = parentPath(route.path)
-      if (parent) openFolder(parent)
-      else goHome()
-    } else if (route.view === 'folder') {
-      goHome()
-    } else {
-      goPortfolio()
-    }
-  }
-  const backLabel =
-    route.view === 'post' ? '← 폴더' : route.view === 'folder' ? '← 전체' : '← Home'
-
   const folderNode =
     route.view === 'folder'
       ? route.path === '__root__'
@@ -418,15 +398,20 @@ export default function StudyPage() {
             </svg>
             <span>GitHub</span>
           </a>
+          <button className="study-my-btn" onClick={goPortfolio}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="1em" height="1em">
+              <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+              <path d="M9 22V12h6v10" />
+            </svg>
+            <span>내 페이지</span>
+          </button>
           <PerformanceToggle />
           <ThemeToggle />
-          <button className="study-home-btn" onClick={backAction}>
-            {backLabel}
-          </button>
         </div>
       </header>
 
       <nav className="study-catbar">
+        <div className="study-catbar-inner">
         <button
           className={`study-cat-chip ${route.view === 'home' ? 'study-cat-chip-active' : ''}`}
           onClick={goHome}
@@ -443,6 +428,7 @@ export default function StudyPage() {
             <b>{cat.postCount}</b>
           </button>
         ))}
+        </div>
       </nav>
       </div>
 
@@ -624,12 +610,24 @@ export default function StudyPage() {
                         className="blog-cat-card"
                         onClick={() => (cat.path === '__root__' ? openFolder('__root__') : openFolder(cat.path))}
                       >
-                        <span className="blog-cat-card-emoji">{cat.emoji}</span>
+                        <span className="blog-cat-card-top">
+                          <span className="blog-cat-card-emoji">{cat.emoji}</span>
+                          <span className="blog-cat-card-arrow">→</span>
+                        </span>
                         <span className="blog-cat-card-name">{cat.name}</span>
                         <span className="blog-cat-card-meta">
-                          {cat.postCount}개의 글 · {cat.subCount}개 하위 폴더
+                          {cat.path === '__root__'
+                            ? '루트에 작성된 글 모음'
+                            : cat.subCount > 0
+                              ? `${cat.subCount}개의 하위 폴더로 구성`
+                              : '폴더 하나로 작성된 글 모음'}
                         </span>
-                        <span className="blog-cat-card-arrow">들어가기 →</span>
+                        <span className="blog-cat-card-badges">
+                          <span className="blog-cat-card-badge">📄 {cat.postCount}개 글</span>
+                          {cat.subCount > 0 && (
+                            <span className="blog-cat-card-badge">📂 {cat.subCount}개 폴더</span>
+                          )}
+                        </span>
                       </button>
                     </Reveal>
                   ))}
