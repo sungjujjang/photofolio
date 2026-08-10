@@ -1474,15 +1474,23 @@ button {
   z-index: 100;
   background: var(--nav-bg);
   backdrop-filter: blur(18px);
+  border-bottom: 1px solid var(--border);
 }
 .study-topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 14px 28px;
-  background: var(--nav-bg);
-  border-bottom: 1px solid var(--border);
+  width: 100%;
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 12px 24px;
+}
+.study-topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
 }
 .study-logo {
   font-size: 1.4rem;
@@ -1490,38 +1498,53 @@ button {
   letter-spacing: -0.02em;
   color: var(--text);
   transition: color 0.25s ease;
+  flex-shrink: 0;
 }
 .study-logo:hover {
   color: var(--accent);
 }
-.study-topbar-center {
+.study-topbar-divider {
+  width: 1px;
+  height: 22px;
+  background: var(--border-strong);
+  flex-shrink: 0;
+}
+.study-topbar-brand {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   line-height: 1.25;
   background: none;
   cursor: pointer;
-  padding: 2px 12px;
+  padding: 2px 8px;
+  margin-left: -8px;
   border-radius: 10px;
+  min-width: 0;
   transition: background 0.25s ease;
 }
-.study-topbar-center:hover {
+.study-topbar-brand:hover {
   background: var(--surface-hover);
 }
 .study-topbar-title {
   font-weight: 800;
-  font-size: 1.05rem;
+  font-size: 1.02rem;
   letter-spacing: -0.01em;
+  white-space: nowrap;
 }
 .study-topbar-sub {
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   color: var(--text-faint);
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 240px;
 }
 .study-topbar-right {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-shrink: 0;
 }
 .study-repo-link,
 .study-about-btn {
@@ -1557,57 +1580,37 @@ button {
   padding: 0 24px 80px;
   flex: 1;
 }
-.blog-hero {
+.blog-masthead {
   position: relative;
   text-align: center;
-  padding: 76px 0 44px;
-  margin-bottom: 8px;
+  padding: 54px 0 40px;
 }
-.blog-hero-orb {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(70px);
-  opacity: 0.32;
-  pointer-events: none;
-}
-.blog-hero-orb-a {
-  width: 360px;
-  height: 360px;
-  top: -60px;
-  left: -80px;
-  background: radial-gradient(circle, var(--accent), transparent 65%);
-}
-.blog-hero-orb-b {
-  width: 320px;
-  height: 320px;
-  top: 20px;
-  right: -70px;
-  background: radial-gradient(circle, var(--grad-3), transparent 65%);
-}
-.blog-hero-badge {
+.blog-masthead-kicker {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
   color: var(--accent-2);
-  background: rgba(245, 73, 0, 0.1);
-  border: 1px solid rgba(245, 73, 0, 0.25);
-  padding: 7px 18px;
+  background: rgba(245, 73, 0, 0.08);
+  border: 1px solid rgba(245, 73, 0, 0.22);
+  padding: 6px 16px;
   border-radius: 999px;
-  margin-bottom: 20px;
+  margin-bottom: 18px;
 }
-.blog-hero-title {
-  font-size: clamp(2.6rem, 8vw, 4.2rem);
+.blog-masthead-title {
+  font-size: clamp(2.4rem, 7vw, 3.6rem);
   font-weight: 800;
   letter-spacing: -0.03em;
-  line-height: 1.08;
-  margin-bottom: 14px;
+  line-height: 1.1;
+  margin-bottom: 12px;
 }
-.blog-hero-sub {
+.blog-masthead-desc {
   color: var(--text-dim);
-  font-size: 1.08rem;
-  margin-bottom: 30px;
+  font-size: 1.02rem;
+  margin-bottom: 4px;
 }
 .study-catbar {
   display: flex;
@@ -1677,13 +1680,13 @@ button {
   margin-top: 24px;
 }
 .folder-section {
-  margin-bottom: 46px;
+  margin-bottom: 48px;
 }
 .folder-section-title {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 1.25rem;
+  font-size: 1.18rem;
   font-weight: 800;
   letter-spacing: -0.01em;
   margin-bottom: 18px;
@@ -1792,24 +1795,37 @@ button {
   max-width: 980px;
 }
 .folder-hero {
-  padding: 20px 0 34px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 34px 0 36px;
 }
 .folder-hero-emoji {
-  font-size: 2.6rem;
-  display: inline-block;
-  margin-bottom: 12px;
-  filter: drop-shadow(0 6px 14px rgba(245, 73, 0, 0.3));
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  flex-shrink: 0;
+  font-size: 2.1rem;
+  border-radius: 22px;
+  background: linear-gradient(135deg, rgba(245, 73, 0, 0.16), rgba(168, 85, 247, 0.16));
+  border: 1px solid rgba(245, 73, 0, 0.25);
+  box-shadow: var(--shadow-sm);
+}
+.folder-hero-body {
+  min-width: 0;
 }
 .folder-hero-title {
-  font-size: clamp(2rem, 6vw, 3rem);
+  font-size: clamp(1.9rem, 5vw, 2.6rem);
   font-weight: 800;
-  letter-spacing: -0.03em;
-  line-height: 1.1;
-  margin-bottom: 8px;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  margin-bottom: 4px;
 }
 .folder-hero-meta {
   color: var(--text-dim);
-  font-size: 0.95rem;
+  font-size: 0.9rem;
 }
 .folder-grid {
   display: grid;
@@ -1903,10 +1919,10 @@ button {
   align-items: center;
   gap: 16px;
   width: 100%;
-  padding: 16px 20px;
+  padding: 14px 18px;
   border-radius: 16px;
   border: 1px solid var(--border);
-  background: var(--surface);
+  background: linear-gradient(180deg, var(--surface-hover), var(--surface) 45%);
   text-align: left;
   transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -1917,9 +1933,16 @@ button {
   box-shadow: var(--shadow-md);
 }
 .blog-post-emoji {
-  font-size: 1.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
   flex-shrink: 0;
-  filter: drop-shadow(0 4px 10px rgba(245, 73, 0, 0.25));
+  font-size: 1.3rem;
+  border-radius: 12px;
+  background: rgba(245, 73, 0, 0.1);
+  border: 1px solid rgba(245, 73, 0, 0.2);
 }
 .blog-post-body {
   flex: 1;
@@ -1940,7 +1963,7 @@ button {
   color: var(--accent);
 }
 .blog-post-path {
-  font-size: 0.74rem;
+  font-size: 0.73rem;
   color: var(--text-faint);
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   white-space: nowrap;
@@ -1948,15 +1971,27 @@ button {
   text-overflow: ellipsis;
 }
 .blog-post-date {
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   color: var(--text-dim);
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 4px 12px;
   flex-shrink: 0;
 }
 .blog-post-arrow {
-  font-size: 1.05rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  font-size: 0.85rem;
   color: var(--accent);
+  background: rgba(245, 73, 0, 0.1);
+  border-radius: 50%;
   opacity: 0;
-  transform: translateX(-8px);
+  transform: translateX(-6px);
   transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .blog-post:hover .blog-post-arrow {
@@ -2339,14 +2374,11 @@ button {
   .study-about-btn {
     padding: 8px 12px;
   }
-  .study-topbar-center {
-    display: none;
-  }
   .blog-page {
     padding: 0 16px 60px;
   }
-  .blog-hero {
-    padding: 52px 0 30px;
+  .blog-masthead {
+    padding: 40px 0 28px;
   }
   .article-page {
     padding: 20px 16px 70px;

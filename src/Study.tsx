@@ -6,6 +6,7 @@ import { navigate } from './router'
 
 const REPO = 'sungjujjang/study'
 const BRANCH = 'main'
+const VELOG = 'https://velog.io/@sungjujjang/posts'
 const TREE_URL = `https://api.github.com/repos/${REPO}/git/trees/${BRANCH}?recursive=1`
 const RAW_BASE = `https://raw.githubusercontent.com/${REPO}/${BRANCH}`
 const CACHE_KEY = 'ksec-study-tree'
@@ -374,14 +375,16 @@ export default function StudyPage() {
     <div className="study-page">
       <div className="study-header">
         <header className="study-topbar">
-        <button className="study-logo" onClick={goPortfolio}>
-          SJ<span className="nav-logo-dot">.</span>
-        </button>
-
-        <button className="study-topbar-center" onClick={goHome}>
-          <span className="study-topbar-title">📚 Study Blog</span>
-          <span className="study-topbar-sub">TIL · {REPO}</span>
-        </button>
+        <div className="study-topbar-left">
+          <button className="study-logo" onClick={goPortfolio}>
+            SJ<span className="nav-logo-dot">.</span>
+          </button>
+          <span className="study-topbar-divider" />
+          <button className="study-topbar-brand" onClick={goHome}>
+            <span className="study-topbar-title">📚 Study TIL</span>
+            <span className="study-topbar-sub">TIL · {REPO}</span>
+          </button>
+        </div>
 
         <div className="study-topbar-right">
           <a
@@ -394,6 +397,14 @@ export default function StudyPage() {
               <path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.55v-2.15c-3.2.7-3.87-1.36-3.87-1.36-.52-1.33-1.28-1.69-1.28-1.69-1.04-.72.08-.7.08-.7 1.15.08 1.76 1.19 1.76 1.19 1.03 1.75 2.69 1.25 3.34.95.1-.74.4-1.25.72-1.53-2.55-.29-5.23-1.28-5.23-5.68 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 2.89-.39c.98 0 1.97.13 2.89.39 2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.41-2.68 5.38-5.24 5.67.41.36.77 1.06.77 2.14v3.18c0 .31.21.66.8.55A11.51 11.51 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5z" />
             </svg>
             <span>GitHub</span>
+          </a>
+          <a
+            className="study-repo-link"
+            href={VELOG}
+            target="_blank"
+            rel="noreferrer"
+          >
+            ✍️ <span>Velog</span>
           </a>
           <button className="study-about-btn" onClick={goAbout}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="1em" height="1em">
@@ -521,10 +532,12 @@ export default function StudyPage() {
                 <span className="folder-hero-emoji">
                   {folderNode.path === '__root__' ? '📄' : emojiFor(folderNode.path)}
                 </span>
-                <h1 className="folder-hero-title">{folderNode.name === '기타' ? '기타' : folderNode.name}</h1>
-                <p className="folder-hero-meta">
-                  {subFolders.length}개 하위 폴더 · {folderFiles.length}개의 글
-                </p>
+                <div className="folder-hero-body">
+                  <h1 className="folder-hero-title">{folderNode.name === '기타' ? '기타' : folderNode.name}</h1>
+                  <p className="folder-hero-meta">
+                    {subFolders.length}개 하위 폴더 · {folderFiles.length}개의 글
+                  </p>
+                </div>
               </header>
 
               {subFolders.length > 0 && (
@@ -576,15 +589,15 @@ export default function StudyPage() {
         </main>
       ) : (
         <main className="blog-page">
-          <div className="blog-hero">
-            <div className="blog-hero-orb blog-hero-orb-a" />
-            <div className="blog-hero-orb blog-hero-orb-b" />
-            <span className="blog-hero-badge">📚 TIL · 학습 기록</span>
-            <h1 className="blog-hero-title">
+          <div className="blog-masthead">
+            <span className="blog-masthead-kicker">📚 TIL · 학습 기록</span>
+            <h1 className="blog-masthead-title">
               Study <span className="grad-text">Blog</span>
             </h1>
-            <p className="blog-hero-sub">
-              {tree ? `${posts.length}개의 TIL을 폴더 구조로 기록한 기술 블로그` : 'study 저장소에서 TIL을 불러오고 있어요'}
+            <p className="blog-masthead-desc">
+              {tree
+                ? `${posts.length}개의 TIL을 ${categories.length}개의 카테고리로 정리했어요`
+                : 'study 저장소에서 TIL을 불러오고 있어요'}
             </p>
           </div>
 

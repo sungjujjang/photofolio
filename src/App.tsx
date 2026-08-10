@@ -212,7 +212,7 @@ function Navbar({ route }: { route: Route }) {
           target="_blank"
           rel="noreferrer"
         >
-          Blog
+          ✍️ Velog
         </a>
       </nav>
 
@@ -306,21 +306,30 @@ function Hero() {
             onClick={() => navigate('/study')}
             style={{ animationDelay: '1.35s' }}
           >
-            📚 Study Blog
+            📚 Study TIL
           </button>
+          <a
+            className="btn btn-ghost"
+            href={profile.blog}
+            target="_blank"
+            rel="noreferrer"
+            style={{ animationDelay: '1.5s' }}
+          >
+            ✍️ Velog
+          </a>
           <a
             className="btn btn-ghost"
             href={profile.github}
             target="_blank"
             rel="noreferrer"
-            style={{ animationDelay: '1.5s' }}
+            style={{ animationDelay: '1.65s' }}
           >
             {icons.github} GitHub
           </a>
           <button
             className="btn btn-ghost"
             onClick={() => document.getElementById('projects')?.scrollIntoView({ behavior: 'smooth' })}
-            style={{ animationDelay: '1.65s' }}
+            style={{ animationDelay: '1.8s' }}
           >
             View Projects ↓
           </button>
@@ -421,7 +430,7 @@ function About() {
                 <dd>{profile.roles.join(' · ')}</dd>
               </div>
               <div>
-                <dt>블로그</dt>
+                <dt>Velog</dt>
                 <dd>
                   <a href={profile.blog} target="_blank" rel="noreferrer" className="inline-link">
                     velog.io/@sungjujjang
@@ -704,7 +713,7 @@ function Contact() {
               <a className="social-btn" href={profile.github} target="_blank" rel="noreferrer" aria-label="GitHub">
                 {icons.github}
               </a>
-              <a className="social-btn" href={profile.blog} target="_blank" rel="noreferrer" aria-label="Blog">
+              <a className="social-btn" href={profile.blog} target="_blank" rel="noreferrer" aria-label="Velog">
                 {icons.blog}
               </a>
               <a className="social-btn" href={`mailto:${profile.email}`} aria-label="Email">
