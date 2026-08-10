@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { profile, skills, projects, timeline, techGroups } from './data'
+import Study from './Study'
 
 /* ------------------------------ utilities ------------------------------ */
 
@@ -31,7 +32,7 @@ function useReveal<T extends HTMLElement>(threshold = 0.15) {
 function useScrollSpy() {
   const [active, setActive] = useState('home')
   useEffect(() => {
-    const sections = ['home', 'about', 'skills', 'projects', 'career', 'contact']
+    const sections = ['home', 'about', 'skills', 'projects', 'study', 'career', 'contact']
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -110,6 +111,57 @@ function useRotator(words: string[], interval = 2400) {
 
 const FLOATERS = ['⚡', '🚀', '☁️', '🐳', '☕', '✨', '💻', '🔮']
 
+/* ------------------------------ Theme ------------------------------- */
+
+type Theme = 'dark' | 'light'
+const THEME_KEY = 'ksec-theme'
+
+function getInitialTheme(): Theme {
+  try {
+    const stored = localStorage.getItem(THEME_KEY)
+    if (stored === 'dark' || stored === 'light') return stored
+  } catch {
+    /* ignore */
+  }
+  return window.matchMedia?.('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
+}
+
+function useTheme() {
+  const [theme, setTheme] = useState<Theme>(getInitialTheme)
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme)
+  }, [theme])
+
+  const toggle = () => {
+    document.documentElement.classList.add('theme-anim')
+    window.setTimeout(() => document.documentElement.classList.remove('theme-anim'), 450)
+    const next: Theme = theme === 'dark' ? 'light' : 'dark'
+    setTheme(next)
+    try {
+      localStorage.setItem(THEME_KEY, next)
+    } catch {
+      /* ignore */
+    }
+  }
+
+  return { theme, toggle }
+}
+
+const themeIcons = {
+  sun: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" width="1em" height="1em">
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41m11.32-11.32 1.41-1.41" />
+    </svg>
+  ),
+  moon: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="1em" height="1em">
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+    </svg>
+  ),
+}
+
 const icons = {
   github: (
     <svg viewBox="0 0 24 24" fill="currentColor" width="1em" height="1em">
@@ -143,6 +195,7 @@ const NAV_LINKS = [
   { id: 'about', label: 'About' },
   { id: 'skills', label: 'Skills' },
   { id: 'projects', label: 'Projects' },
+  { id: 'study', label: 'Study' },
   { id: 'career', label: 'Career' },
   { id: 'contact', label: 'Contact' },
 ]
@@ -151,6 +204,7 @@ function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [open, setOpen] = useState(false)
   const active = useScrollSpy()
+  const { theme, toggle } = useTheme()
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40)
@@ -189,6 +243,17 @@ function Navbar() {
           Blog
         </a>
       </nav>
+
+      <button
+        className="theme-toggle"
+        onClick={toggle}
+        aria-label={theme === 'dark' ? 'switch to light mode' : 'switch to dark mode'}
+        title={theme === 'dark' ? '라이트 모드' : '다크 모드'}
+      >
+        <span className="theme-toggle-icon">
+          {theme === 'dark' ? themeIcons.sun : themeIcons.moon}
+        </span>
+      </button>
 
       <button className="nav-burger" aria-label="menu" onClick={() => setOpen((v) => !v)}>
         <span />
@@ -732,6 +797,7 @@ export default function App() {
         <About />
         <Skills />
         <Projects />
+        <Study />
         <Career />
         <Contact />
       </main>
