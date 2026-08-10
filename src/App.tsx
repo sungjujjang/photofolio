@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { profile, skills, projects, timeline, techGroups } from './data'
-import Study from './Study'
+import { ThemeToggle, PerformanceToggle } from './theme'
+import StudyPage from './Study'
 
 /* ------------------------------ utilities ------------------------------ */
 
@@ -32,7 +33,7 @@ function useReveal<T extends HTMLElement>(threshold = 0.15) {
 function useScrollSpy() {
   const [active, setActive] = useState('home')
   useEffect(() => {
-    const sections = ['home', 'about', 'skills', 'projects', 'study', 'career', 'contact']
+    const sections = ['home', 'about', 'skills', 'projects', 'career', 'contact']
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -89,77 +90,24 @@ function CursorGlow() {
   return <div ref={glowRef} className="cursor-glow" aria-hidden />
 }
 
-/* word rotator */
-function useRotator(words: string[], interval = 2400) {
-  const [index, setIndex] = useState(0)
-  const [visible, setVisible] = useState(true)
-
-  useEffect(() => {
-    const hide = setTimeout(() => setVisible(false), interval - 400)
-    const next = setTimeout(() => {
-      setIndex((v) => (v + 1) % words.length)
-      setVisible(true)
-    }, interval)
-    return () => {
-      clearTimeout(hide)
-      clearTimeout(next)
-    }
-  }, [index, interval])
-
-  return { word: words[index], visible }
-}
-
 const FLOATERS = ['⚡', '🚀', '☁️', '🐳', '☕', '✨', '💻', '🔮']
 
-/* ------------------------------ Theme ------------------------------- */
+/* ------------------------------ Routing ------------------------------ */
 
-type Theme = 'dark' | 'light'
-const THEME_KEY = 'ksec-theme'
+type Route = 'home' | 'study'
 
-function getInitialTheme(): Theme {
-  try {
-    const stored = localStorage.getItem(THEME_KEY)
-    if (stored === 'dark' || stored === 'light') return stored
-  } catch {
-    /* ignore */
-  }
-  return window.matchMedia?.('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
+function getHashRoute(): Route {
+  return window.location.hash.replace(/^#\/?/, '') === 'study' ? 'study' : 'home'
 }
 
-function useTheme() {
-  const [theme, setTheme] = useState<Theme>(getInitialTheme)
-
+function useHashRoute(): Route {
+  const [route, setRoute] = useState<Route>(getHashRoute)
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme)
-  }, [theme])
-
-  const toggle = () => {
-    document.documentElement.classList.add('theme-anim')
-    window.setTimeout(() => document.documentElement.classList.remove('theme-anim'), 450)
-    const next: Theme = theme === 'dark' ? 'light' : 'dark'
-    setTheme(next)
-    try {
-      localStorage.setItem(THEME_KEY, next)
-    } catch {
-      /* ignore */
-    }
-  }
-
-  return { theme, toggle }
-}
-
-const themeIcons = {
-  sun: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" width="1em" height="1em">
-      <circle cx="12" cy="12" r="4" />
-      <path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41m11.32-11.32 1.41-1.41" />
-    </svg>
-  ),
-  moon: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="1em" height="1em">
-      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-    </svg>
-  ),
+    const onHash = () => setRoute(getHashRoute())
+    window.addEventListener('hashchange', onHash)
+    return () => window.removeEventListener('hashchange', onHash)
+  }, [])
+  return route
 }
 
 const icons = {
@@ -200,11 +148,11 @@ const NAV_LINKS = [
   { id: 'contact', label: 'Contact' },
 ]
 
-function Navbar() {
+function Navbar({ route }: { route: Route }) {
   const [scrolled, setScrolled] = useState(false)
   const [open, setOpen] = useState(false)
-  const active = useScrollSpy()
-  const { theme, toggle } = useTheme()
+  const spyActive = useScrollSpy()
+  const active = route === 'study' ? 'study' : spyActive
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40)
@@ -213,14 +161,35 @@ function Navbar() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
+  const goHome = () => {
+    setOpen(false)
+    if (route === 'study') {
+      window.location.hash = '#/'
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  }
+
   const scrollTo = (id: string) => {
     setOpen(false)
-    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
+    if (id === 'study') {
+      window.location.hash = '#/study'
+      return
+    }
+    if (route === 'study') {
+      window.location.hash = '#/'
+      window.setTimeout(
+        () => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' }),
+        80,
+      )
+    } else {
+      document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
+    }
   }
 
   return (
     <header className={`nav ${scrolled ? 'nav-scrolled' : ''}`}>
-      <button className="nav-logo" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+      <button className="nav-logo" onClick={goHome}>
         SJ<span className="nav-logo-dot">.</span>
       </button>
 
@@ -244,16 +213,10 @@ function Navbar() {
         </a>
       </nav>
 
-      <button
-        className="theme-toggle"
-        onClick={toggle}
-        aria-label={theme === 'dark' ? 'switch to light mode' : 'switch to dark mode'}
-        title={theme === 'dark' ? '라이트 모드' : '다크 모드'}
-      >
-        <span className="theme-toggle-icon">
-          {theme === 'dark' ? themeIcons.sun : themeIcons.moon}
-        </span>
-      </button>
+      <div className="nav-toggles">
+        <PerformanceToggle />
+        <ThemeToggle />
+      </div>
 
       <button className="nav-burger" aria-label="menu" onClick={() => setOpen((v) => !v)}>
         <span />
@@ -269,7 +232,6 @@ function Navbar() {
 function Hero() {
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
-  const { word, visible } = useRotator(['Build', 'Deploy', 'Innovate', 'Ship', 'Learn'])
 
   return (
     <section id="home" className="hero">
@@ -324,9 +286,7 @@ function Hero() {
           ))}
         </p>
         <p className="hero-type">
-          <span className={`rot-word ${visible ? 'rot-word-in' : 'rot-word-out'}`}>
-            {word}
-          </span>
+          <span className="hero-type-static">Learn · Build · Deploy</span>
         </p>
         <p className="hero-desc">{profile.intro}</p>
 
@@ -788,21 +748,28 @@ function Footer() {
 /* --------------------------------- App -------------------------------- */
 
 export default function App() {
+  const route = useHashRoute()
+
   return (
     <>
       <CursorGlow />
-      <Navbar />
-      <main>
-        <Hero />
-        <About />
-        <Skills />
-        <Projects />
-        <Study />
-        <Career />
-        <Contact />
-      </main>
-      <Footer />
-      <BackToTop />
+      {route === 'study' ? (
+        <StudyPage />
+      ) : (
+        <>
+          <Navbar route={route} />
+          <main>
+            <Hero />
+            <About />
+            <Skills />
+            <Projects />
+            <Career />
+            <Contact />
+          </main>
+          <Footer />
+          <BackToTop />
+        </>
+      )}
     </>
   )
 }

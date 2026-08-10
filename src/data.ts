@@ -248,6 +248,14 @@ export const timeline = [
     tag: '학교',
     emoji: '👑',
   },
+  {
+    date: '2026',
+    title: '카카오 AI 루키캠프 수료',
+    description:
+      '카카오에서 주최한 AI 루키캠프를 수료하며 실무에 가까운 AI/ML 학습과 프로젝트 경험을 쌓았습니다.',
+    tag: '교육',
+    emoji: '🤖',
+  },
 ]
 
 export const techGroups = [

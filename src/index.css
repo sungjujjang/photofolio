@@ -76,6 +76,42 @@
     color 0.4s ease, fill 0.4s ease, box-shadow 0.4s ease !important;
 }
 
+/* ============ Performance (lag-free) mode ============ */
+[data-performance='on'] *,
+[data-performance='on'] *::before,
+[data-performance='on'] *::after {
+  animation-duration: 0.001s !important;
+  animation-delay: 0s !important;
+  animation-iteration-count: 1 !important;
+  transition: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+[data-performance='on'] .cursor-glow {
+  display: none !important;
+}
+[data-performance='on'] .orb {
+  animation: none !important;
+  filter: none !important;
+  opacity: 0.12 !important;
+}
+[data-performance='on'] .floater {
+  display: none !important;
+}
+[data-performance='on'] .grid-overlay {
+  background-image: none !important;
+}
+[data-performance='on'] .marquee-track {
+  animation: none !important;
+}
+[data-performance='on'] .hero-word,
+[data-performance='on'] .role-chip,
+[data-performance='on'] .skill-pill,
+[data-performance='on'] .reveal {
+  opacity: 1 !important;
+  transform: none !important;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -316,6 +352,40 @@ button {
   background: var(--surface-hover);
   transform: rotate(18deg) scale(1.06);
 }
+.nav-toggles {
+  display: flex;
+  align-items: center;
+}
+.nav-toggles .theme-toggle {
+  margin-left: 8px;
+}
+.perf-toggle {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-dim);
+  font-size: 1.05rem;
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.perf-toggle:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--surface-hover);
+  transform: scale(1.06);
+}
+.perf-toggle-on {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: rgba(245, 73, 0, 0.1);
+}
+.perf-toggle-on:hover {
+  color: var(--accent);
+  transform: scale(1.06);
+}
 .theme-toggle-icon {
   display: inline-flex;
 }
@@ -548,26 +618,15 @@ button {
   margin-bottom: 14px;
   opacity: 0;
   animation: fadeUp 0.8s ease 0.45s forwards;
-  min-height: 2.2em;
   display: flex;
   align-items: center;
   justify-content: center;
 }
-.rot-word {
-  position: absolute;
+.hero-type-static {
   background: linear-gradient(120deg, var(--accent-2), var(--grad-3));
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
-}
-.rot-word-in {
-  opacity: 1;
-  transform: translateY(0) scale(1);
-}
-.rot-word-out {
-  opacity: 0;
-  transform: translateY(-14px) scale(0.9);
 }
 
 .hero-actions {
@@ -1403,11 +1462,85 @@ button {
   }
 }
 
-/* ============ Study tab ============ */
-.study-layout {
+/* ============ Study page ============ */
+.study-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+.study-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 28px;
+  background: var(--nav-bg);
+  backdrop-filter: blur(18px);
+  border-bottom: 1px solid var(--border);
+}
+.study-logo {
+  font-size: 1.4rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+.study-topbar-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.25;
+}
+.study-topbar-title {
+  font-weight: 800;
+  font-size: 1.05rem;
+  letter-spacing: -0.01em;
+}
+.study-topbar-sub {
+  font-size: 0.72rem;
+  color: var(--text-faint);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.study-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.study-repo-link,
+.study-home-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 16px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-dim);
+  transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.study-repo-link:hover,
+.study-home-btn:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--surface-hover);
+  transform: translateY(-1px);
+}
+.study-repo-link svg {
+  font-size: 1.05em;
+}
+.study-container {
+  flex: 1;
   display: grid;
-  grid-template-columns: 300px 1fr;
-  gap: 20px;
+  grid-template-columns: 320px 1fr;
+  gap: 22px;
+  width: 100%;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 24px 24px 60px;
   align-items: stretch;
 }
 .study-sidebar,
@@ -1417,12 +1550,21 @@ button {
   border-radius: var(--radius);
   backdrop-filter: blur(10px);
   overflow: hidden;
+  box-shadow: var(--shadow-sm);
 }
 .study-sidebar {
   display: flex;
   flex-direction: column;
-  min-height: 560px;
-  max-height: 72vh;
+  height: calc(100vh - 92px);
+  position: sticky;
+  top: 76px;
+}
+.study-content {
+  height: calc(100vh - 92px);
+  position: sticky;
+  top: 76px;
+  display: flex;
+  flex-direction: column;
 }
 .study-sidebar-head {
   display: flex;
@@ -1552,12 +1694,6 @@ button {
 }
 .tree-file-active .tree-file-icon {
   opacity: 1;
-}
-.study-content {
-  min-height: 560px;
-  max-height: 72vh;
-  display: flex;
-  flex-direction: column;
 }
 .study-doc-head {
   padding: 18px 26px;
@@ -1754,18 +1890,37 @@ button {
 }
 
 @media (max-width: 860px) {
-  .study-layout {
+  .study-container {
     grid-template-columns: 1fr;
+    padding: 16px 16px 40px;
   }
   .study-sidebar,
   .study-content {
-    max-height: none;
-    min-height: auto;
+    height: auto;
+    position: static;
+    top: auto;
   }
   .study-sidebar {
     max-height: 40vh;
   }
+  .study-content {
+    min-height: 60vh;
+  }
   .md-body {
     padding: 24px 22px 36px;
+  }
+  .study-topbar {
+    padding: 12px 16px;
+  }
+  .study-topbar-sub,
+  .study-repo-link span,
+  .study-home-btn span {
+    display: none;
+  }
+  .study-topbar-center {
+    display: none;
+  }
+  .study-topbar-right {
+    margin-left: auto;
   }
 }

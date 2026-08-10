@@ -14,6 +14,10 @@
             t = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
           }
           document.documentElement.setAttribute('data-theme', t)
+          var p = localStorage.getItem('ksec-perf')
+          if (p === 'on' || p === 'off') {
+            document.documentElement.setAttribute('data-performance', p)
+          }
         } catch (e) {
           document.documentElement.setAttribute('data-theme', 'dark')
         }
