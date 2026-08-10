@@ -2233,6 +2233,20 @@ button {
   font-size: 0.72rem;
   color: var(--text-faint);
 }
+.velog-tags {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.velog-tag {
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  color: var(--text-dim);
+  font-size: 0.74rem;
+  font-weight: 700;
+}
 
 .article-loading {
   display: flex;
