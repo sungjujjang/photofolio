@@ -610,9 +610,16 @@ export default function StudyPage() {
                         <span className="blog-cat-card-emoji">{cat.emoji}</span>
                         <span className="blog-cat-card-name">{cat.name}</span>
                         <span className="blog-cat-card-meta">
-                          {cat.postCount}개의 글 · {cat.subCount}개 하위 폴더
+                          {cat.path === '__root__'
+                            ? '루트에 작성된 글 모음'
+                            : cat.subCount > 0
+                              ? `${cat.subCount}개의 하위 폴더로 구성`
+                              : '한 폴더에 모은 학습 기록'}
                         </span>
-                        <span className="blog-cat-card-arrow">들어가기 →</span>
+                        <span className="blog-cat-card-foot">
+                          <span className="blog-cat-card-tag">📄 {cat.postCount}개</span>
+                          <span className="blog-cat-card-arrow">들어가기 →</span>
+                        </span>
                       </button>
                     </Reveal>
                   ))}
