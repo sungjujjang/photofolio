@@ -221,10 +221,10 @@ function parseRoute(): StudyRoute {
   return isMdFile(path) ? { view: 'post', path } : { view: 'folder', path }
 }
 
-const dateBadge = (date: string | null) => {
-  if (!date) return '📅 미정'
+const dateText = (date: string | null) => {
+  if (!date) return '미정'
   const [y, m, d] = date.split('-')
-  return `📅 ${y}.${m}.${d}`
+  return `${y}.${m}.${d}`
 }
 
 export default function StudyPage() {
@@ -443,7 +443,7 @@ export default function StudyPage() {
       {route.view === 'post' ? (
         <main className="article-page">
           <nav className="article-breadcrumb">
-            <button onClick={goHome}>🏠 Blog</button>
+            <button onClick={goHome}>🏠</button>
             <span className="article-bc-sep">/</span>
             {breadcrumb.slice(0, -1).map((item, bi) => (
               <span key={bi}>
@@ -461,7 +461,7 @@ export default function StudyPage() {
             <h1 className="article-title">{current?.title ?? ''}</h1>
             <div className="article-meta">
               <span className="article-meta-chip">{current?.category ?? '기타'}</span>
-              <span className="article-meta-chip">{dateBadge(current?.date ?? null)}</span>
+              <span className="article-meta-chip">📅 {dateText(current?.date ?? null)}</span>
               <span className="article-meta-chip article-meta-path">{current?.path ?? ''}</span>
             </div>
           </div>
@@ -499,7 +499,7 @@ export default function StudyPage() {
       ) : route.view === 'folder' ? (
         <main className="blog-page folder-page">
           <nav className="article-breadcrumb">
-            <button onClick={goHome}>🏠 Blog</button>
+            <button onClick={goHome}>🏠</button>
             <span className="article-bc-sep">/</span>
             {breadcrumb.map((item, bi) => {
               const isLast = bi === breadcrumb.length - 1
@@ -546,11 +546,11 @@ export default function StudyPage() {
                   <div className="folder-grid">
                     {subFolders.map((sub, si) => (
                       <Reveal key={sub.path} delay={si * 40}>
-                        <button className="folder-card" onClick={() => openFolder(sub.path)}>
-                          <span className="folder-card-emoji">{sub.emoji}</span>
+                        <button className="study-card folder-card" onClick={() => openFolder(sub.path)}>
+                          <span className="study-tile">{sub.emoji}</span>
                           <span className="folder-card-body">
                             <span className="folder-card-name">{sub.name}</span>
-                            <span className="folder-card-sub">{sub.postCount}개의 글</span>
+                            <span className="folder-card-sub">{sub.postCount} TIL</span>
                           </span>
                           <span className="folder-card-arrow">→</span>
                         </button>
@@ -566,14 +566,13 @@ export default function StudyPage() {
                   <div className="blog-post-list">
                     {folderFiles.map((post, pi) => (
                       <Reveal key={post.path} delay={pi * 25}>
-                        <button className="blog-post" onClick={() => openPost(post.path)}>
-                          <span className="blog-post-emoji">{post.emoji}</span>
+                        <button className="study-card blog-post" onClick={() => openPost(post.path)}>
+                          <span className="study-tile blog-post-emoji">{post.emoji}</span>
                           <span className="blog-post-body">
                             <span className="blog-post-title">{post.title}</span>
                             <span className="blog-post-path">{post.path}</span>
                           </span>
-                          <span className="blog-post-date">{dateBadge(post.date)}</span>
-                          <span className="blog-post-arrow">→</span>
+                          <span className="blog-post-date">{dateText(post.date)}</span>
                         </button>
                       </Reveal>
                     ))}
@@ -589,16 +588,28 @@ export default function StudyPage() {
         </main>
       ) : (
         <main className="blog-page">
-          <div className="blog-masthead">
-            <span className="blog-masthead-kicker">📚 TIL · 학습 기록</span>
-            <h1 className="blog-masthead-title">
-              Study <span className="grad-text">Blog</span>
+          <div className="blog-hero">
+            <span className="blog-hero-kicker">// {REPO}</span>
+            <h1 className="blog-hero-title">
+              Study <span className="blog-hero-grad">TIL</span>
             </h1>
-            <p className="blog-masthead-desc">
-              {tree
-                ? `${posts.length}개의 TIL을 ${categories.length}개의 카테고리로 정리했어요`
-                : 'study 저장소에서 TIL을 불러오고 있어요'}
+            <p className="blog-hero-desc">
+              하나씩 쌓은 학습 기록을 폴더 구조로 정리한 개발 블로그예요.
             </p>
+            <div className="blog-hero-stats">
+              <span className="blog-hero-stat">
+                <b>{tree ? posts.length : '–'}</b>
+                <span>TIL</span>
+              </span>
+              <span className="blog-hero-stat">
+                <b>{tree ? categories.length : '–'}</b>
+                <span>카테고리</span>
+              </span>
+              <span className="blog-hero-stat">
+                <b>{tree && posts[0]?.date ? dateText(posts[0].date) : '–'}</b>
+                <span>최근 TIL</span>
+              </span>
+            </div>
           </div>
 
           {error && <div className="study-error blog-error">⚠️ {error}</div>}
@@ -617,10 +628,13 @@ export default function StudyPage() {
                   {categories.map((cat, ci) => (
                     <Reveal key={cat.path} delay={ci * 50}>
                       <button
-                        className="blog-cat-card"
+                        className="study-card blog-cat-card"
                         onClick={() => (cat.path === '__root__' ? openFolder('__root__') : openFolder(cat.path))}
                       >
-                        <span className="blog-cat-card-emoji">{cat.emoji}</span>
+                        <span className="blog-cat-card-top">
+                          <span className="study-tile">{cat.emoji}</span>
+                          <span className="blog-cat-card-count">{cat.postCount} TIL</span>
+                        </span>
                         <span className="blog-cat-card-name">{cat.name}</span>
                         <span className="blog-cat-card-meta">
                           {cat.path === '__root__'
@@ -629,10 +643,7 @@ export default function StudyPage() {
                               ? `${cat.subCount}개의 하위 폴더로 구성`
                               : '한 폴더에 모은 학습 기록'}
                         </span>
-                        <span className="blog-cat-card-foot">
-                          <span className="blog-cat-card-tag">📄 {cat.postCount}개</span>
-                          <span className="blog-cat-card-arrow">들어가기 →</span>
-                        </span>
+                        <span className="blog-cat-card-cta">카테고리 열기 →</span>
                       </button>
                     </Reveal>
                   ))}
@@ -644,14 +655,13 @@ export default function StudyPage() {
                 <div className="blog-post-list">
                   {posts.slice(0, 8).map((post, pi) => (
                     <Reveal key={post.path} delay={pi * 25}>
-                      <button className="blog-post" onClick={() => openPost(post.path)}>
-                        <span className="blog-post-emoji">{post.emoji}</span>
+                      <button className="study-card blog-post" onClick={() => openPost(post.path)}>
+                        <span className="study-tile blog-post-emoji">{post.emoji}</span>
                         <span className="blog-post-body">
                           <span className="blog-post-title">{post.title}</span>
                           <span className="blog-post-path">{post.path}</span>
                         </span>
-                        <span className="blog-post-date">{dateBadge(post.date)}</span>
-                        <span className="blog-post-arrow">→</span>
+                        <span className="blog-post-date">{dateText(post.date)}</span>
                       </button>
                     </Reveal>
                   ))}
