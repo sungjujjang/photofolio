@@ -284,7 +284,7 @@ async function fetchVelogPostBody(slug: string): Promise<string> {
   const data = (await res.json()) as { data?: { post?: { body?: string } | null } }
   const body = data.data?.post?.body
   if (!body) throw new Error('empty velog post')
-  return DOMPurify.sanitize(body)
+  return renderMarkdown(body, '')
 }
 
 function parseRoute(): StudyRoute {
@@ -393,6 +393,28 @@ export default function StudyPage() {
   const [velogLoading, setVelogLoading] = useState(false)
 
   const posts = useMemo(() => (tree ? collectPosts(tree) : []), [tree])
+
+  const recentPosts = useMemo(() => {
+    const items = [
+      ...posts.map((p) => ({
+        key: p.path,
+        title: p.title,
+        path: p.path,
+        sub: p.path,
+        emoji: p.emoji,
+        date: p.date,
+      })),
+      ...velogPosts.map((v) => ({
+        key: `velog/${v.urlSlug}`,
+        title: v.title,
+        path: `velog/${v.urlSlug}`,
+        sub: v.tags.length ? `Velog · ${v.tags.map((t) => `#${t}`).join(' ')}` : 'Velog',
+        emoji: '✍️',
+        date: v.releasedAt.slice(0, 10),
+      })),
+    ]
+    return items.sort((a, b) => (b.date ?? '').localeCompare(a.date ?? '')).slice(0, 8)
+  }, [posts, velogPosts])
 
   const categories = useMemo<Category[]>(() => {
     if (!tree) return []
@@ -950,13 +972,13 @@ export default function StudyPage() {
               <section className="folder-section">
                 <h2 className="folder-section-title">✨ 최근 글</h2>
                 <div className="blog-post-list">
-                  {posts.slice(0, 8).map((post, pi) => (
-                    <Reveal key={post.path} delay={pi * 25}>
+                  {recentPosts.map((post, pi) => (
+                    <Reveal key={post.key} delay={pi * 25}>
                       <button className="study-card blog-post" onClick={() => openPost(post.path)}>
                         <span className="study-tile blog-post-emoji">{post.emoji}</span>
                         <span className="blog-post-body">
                           <span className="blog-post-title">{post.title}</span>
-                          <span className="blog-post-path">{post.path}</span>
+                          <span className="blog-post-path">{post.sub}</span>
                         </span>
                         <span className="blog-post-date">{dateText(post.date)}</span>
                       </button>
