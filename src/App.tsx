@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { profile, skills, projects, timeline, techGroups } from './data'
 import { ThemeToggle, PerformanceToggle } from './theme'
+import { navigate } from './router'
 import StudyPage from './Study'
 
 /* ------------------------------ utilities ------------------------------ */
@@ -96,17 +97,17 @@ const FLOATERS = ['⚡', '🚀', '☁️', '🐳', '☕', '✨', '💻', '🔮']
 
 type Route = 'home' | 'study'
 
-function getHashRoute(): Route {
-  const h = window.location.hash.replace(/^#\/?/, '')
-  return h === 'study' || h.startsWith('study/') ? 'study' : 'home'
+function getPathRoute(): Route {
+  const p = window.location.pathname.replace(/\/+$/, '')
+  return p === '/study' || p.startsWith('/study/') ? 'study' : 'home'
 }
 
-function useHashRoute(): Route {
-  const [route, setRoute] = useState<Route>(getHashRoute)
+function usePathRoute(): Route {
+  const [route, setRoute] = useState<Route>(getPathRoute)
   useEffect(() => {
-    const onHash = () => setRoute(getHashRoute())
-    window.addEventListener('hashchange', onHash)
-    return () => window.removeEventListener('hashchange', onHash)
+    const onPop = () => setRoute(getPathRoute())
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
   }, [])
   return route
 }
@@ -165,7 +166,8 @@ function Navbar({ route }: { route: Route }) {
   const goHome = () => {
     setOpen(false)
     if (route === 'study') {
-      window.location.hash = '#/'
+      navigate('/')
+      window.setTimeout(() => window.scrollTo(0, 0), 50)
     } else {
       window.scrollTo({ top: 0, behavior: 'smooth' })
     }
@@ -174,11 +176,11 @@ function Navbar({ route }: { route: Route }) {
   const scrollTo = (id: string) => {
     setOpen(false)
     if (id === 'study') {
-      window.location.hash = '#/study'
+      navigate('/study')
       return
     }
     if (route === 'study') {
-      window.location.hash = '#/'
+      navigate('/')
       window.setTimeout(
         () => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' }),
         80,
@@ -749,7 +751,7 @@ function Footer() {
 /* --------------------------------- App -------------------------------- */
 
 export default function App() {
-  const route = useHashRoute()
+  const route = usePathRoute()
 
   return (
     <>

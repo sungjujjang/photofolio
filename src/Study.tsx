@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { marked } from 'marked'
 import DOMPurify from 'dompurify'
 import { PerformanceToggle, ThemeToggle } from './theme'
+import { navigate } from './router'
 
 const REPO = 'sungjujjang/study'
 const BRANCH = 'main'
@@ -207,18 +208,16 @@ function renderMarkdown(md: string, fileDir: string): string {
 }
 
 function parseRoute(): StudyRoute {
-  const h = window.location.hash.replace(/^#\/?/, '')
-  if (h === 'study') return { view: 'home' }
-  if (h.startsWith('study/')) {
-    const p = h.slice('study/'.length)
-    try {
-      const path = decodeURIComponent(p)
-      return isMdFile(path) ? { view: 'post', path } : { view: 'folder', path }
-    } catch {
-      return { view: 'home' }
-    }
+  if (!window.location.pathname.startsWith('/study')) return { view: 'home' }
+  const rel = window.location.pathname.slice('/study'.length).replace(/^\/+/, '')
+  if (!rel) return { view: 'home' }
+  let path = rel
+  try {
+    path = decodeURIComponent(rel)
+  } catch {
+    /* keep raw */
   }
-  return { view: 'home' }
+  return isMdFile(path) ? { view: 'post', path } : { view: 'folder', path }
 }
 
 const dateBadge = (date: string | null) => {
@@ -272,14 +271,9 @@ export default function StudyPage() {
   }, [])
 
   useEffect(() => {
-    const onHash = () => setRoute(parseRoute())
-    window.addEventListener('hashchange', onHash)
-    return () => window.removeEventListener('hashchange', onHash)
-  }, [])
-
-  useEffect(() => {
-    const h = window.location.hash.replace(/^#\/?/, '')
-    if (h.startsWith('study/')) history.replaceState(null, '', '#/study')
+    const onPop = () => setRoute(parseRoute())
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
   }, [])
 
   useEffect(() => {
@@ -313,14 +307,15 @@ export default function StudyPage() {
     }
   }, [route])
 
-  const openFolder = (path: string) => setRoute({ view: 'folder', path })
-  const openPost = (path: string) => setRoute({ view: 'post', path })
-  const goHome = () => setRoute({ view: 'home' })
+  const openFolder = (path: string) => navigate(`/study/${encodeURI(path)}`)
+  const openPost = (path: string) => navigate(`/study/${encodeURI(path)}`)
+  const goHome = () => navigate('/study')
   const goPortfolio = () => {
-    window.location.hash = '#/'
+    navigate('/')
+    window.setTimeout(() => window.scrollTo(0, 0), 50)
   }
   const goAbout = () => {
-    window.location.hash = '#/'
+    navigate('/')
     window.setTimeout(() => {
       document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' })
     }, 120)
