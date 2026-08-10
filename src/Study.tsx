@@ -228,7 +228,46 @@ const dateText = (date: string | null) => {
 }
 
 type GrassDay = { date: string; count: number }
-type GrassData = { weeks: GrassDay[][]; activeDays: number; streak: number }
+type GrassYearData = { weeks: GrassDay[][]; activeDays: number }
+type GrassData = { years: string[]; perYear: Record<string, GrassYearData>; streak: number }
+
+const keyOf = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+
+function buildYearGrass(year: number, counts: Map<string, number>): GrassYearData {
+  const keys = [...counts.keys()]
+    .filter((k) => k.startsWith(`${year}-`) && (counts.get(k) ?? 0) > 0)
+    .sort()
+  if (!keys.length) return { weeks: [], activeDays: 0 }
+
+  const parse = (k: string) =>
+    new Date(Number(k.slice(0, 4)), Number(k.slice(5, 7)) - 1, Number(k.slice(8, 10)))
+
+  const start = parse(keys[0])
+  start.setDate(start.getDate() - start.getDay())
+
+  const now = new Date()
+  const end = year === now.getFullYear() ? now : parse(keys[keys.length - 1])
+  end.setHours(0, 0, 0, 0)
+  end.setDate(end.getDate() + (6 - end.getDay()))
+  const endKey = keyOf(end)
+
+  const weeks: GrassDay[][] = []
+  const cur = new Date(start)
+  let activeDays = 0
+  while (keyOf(cur) <= endKey) {
+    const week: GrassDay[] = []
+    for (let dow = 0; dow < 7; dow++) {
+      const key = keyOf(cur)
+      const count = counts.get(key) ?? 0
+      if (count > 0) activeDays++
+      week.push({ date: key, count })
+      cur.setDate(cur.getDate() + 1)
+    }
+    weeks.push(week)
+  }
+  return { weeks, activeDays }
+}
 
 function buildGrassData(posts: Post[]): GrassData {
   const counts = new Map<string, number>()
@@ -237,39 +276,23 @@ function buildGrassData(posts: Post[]): GrassData {
   }
 
   const now = new Date()
-  const end = new Date(now)
-  end.setHours(0, 0, 0, 0)
-  end.setDate(end.getDate() - ((end.getDay() + 1) % 7))
-  const start = new Date(end)
-  start.setDate(start.getDate() - 52 * 7)
+  const years = new Set<number>([now.getFullYear()])
+  for (const k of counts.keys()) years.add(Number(k.slice(0, 4)))
+  const sorted = [...years].sort((a, b) => b - a)
 
-  const keyOf = (d: Date) =>
-    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-
-  const weeks: GrassDay[][] = []
-  let activeDays = 0
-  for (let w = 0; w < 53; w++) {
-    const week: GrassDay[] = []
-    for (let dow = 0; dow < 7; dow++) {
-      const day = new Date(start)
-      day.setDate(start.getDate() + w * 7 + dow)
-      const key = keyOf(day)
-      const count = counts.get(key) ?? 0
-      if (count > 0) activeDays++
-      week.push({ date: key, count })
-    }
-    weeks.push(week)
-  }
+  const perYear: Record<string, GrassYearData> = {}
+  for (const y of sorted) perYear[String(y)] = buildYearGrass(y, counts)
 
   let streak = 0
   const cursor = new Date(now)
+  cursor.setHours(0, 0, 0, 0)
   if (!counts.get(keyOf(cursor))) cursor.setDate(cursor.getDate() - 1)
   while (counts.get(keyOf(cursor))) {
     streak++
     cursor.setDate(cursor.getDate() - 1)
   }
 
-  return { weeks, activeDays, streak }
+  return { years: sorted.map(String), perYear, streak }
 }
 
 const grassLevel = (count: number) =>
@@ -729,15 +752,23 @@ export default function StudyPage() {
 
 /* GitHub-style contribution graph */
 function TILGrass({ posts }: { posts: Post[] }) {
-  const { weeks, activeDays, streak } = useMemo(() => buildGrassData(posts), [posts])
+  const { years, perYear, streak } = useMemo(() => buildGrassData(posts), [posts])
+  const [year, setYear] = useState(years[0] ?? String(new Date().getFullYear()))
+
+  useEffect(() => {
+    if (!years.includes(year)) setYear(years[0] ?? String(new Date().getFullYear()))
+  }, [years, year])
+
+  const data = perYear[year] ?? { weeks: [], activeDays: 0 }
+
   return (
     <section className="folder-section">
       <h2 className="folder-section-title">🌱 TIL 잔디</h2>
       <div className="tl-grass-card">
         <div className="tl-grass-head">
           <span className="tl-grass-stat">
-            <b>{activeDays}</b>
-            <span>일 동안 기록</span>
+            <b>{data.activeDays}</b>
+            <span>{year} · 일 동안 기록</span>
           </span>
           <span className="tl-grass-stat">
             <b>{streak}</b>
@@ -751,29 +782,42 @@ function TILGrass({ posts }: { posts: Post[] }) {
             <span>많음</span>
           </span>
         </div>
+        <div className="tl-grass-years">
+          {years.map((y) => (
+            <button
+              key={y}
+              className={`tl-grass-year ${y === year ? 'tl-grass-year-active' : ''}`}
+              onClick={() => setYear(y)}
+            >
+              {y}
+            </button>
+          ))}
+        </div>
         <div className="tl-grass-scroll">
-          <div className="tl-grass-months">
-            {weeks.map((week, wi) => {
-              const first = week.find((d) => d.date.endsWith('-01'))
-              return (
-                <span key={wi} className="tl-grass-month">
-                  {first ? monthLabel(first.date) : ''}
-                </span>
-              )
-            })}
-          </div>
-          <div className="tl-grass-grid">
-            {weeks.map((week, wi) => (
-              <div key={wi} className="tl-grass-week">
-                {week.map((d) => (
-                  <div
-                    key={d.date}
-                    className={`tl-grass-cell tl-grass-${grassLevel(d.count)}`}
-                    title={d.count > 0 ? `${d.date} · TIL ${d.count}개` : d.date}
-                  />
-                ))}
-              </div>
-            ))}
+          <div className="tl-grass-inner">
+            <div className="tl-grass-months">
+              {data.weeks.map((week, wi) => {
+                const first = week.find((d) => d.date.endsWith('-01'))
+                return (
+                  <span key={wi} className="tl-grass-month">
+                    {first ? monthLabel(first.date) : ''}
+                  </span>
+                )
+              })}
+            </div>
+            <div className="tl-grass-grid">
+              {data.weeks.map((week, wi) => (
+                <div key={wi} className="tl-grass-week">
+                  {week.map((d) => (
+                    <div
+                      key={d.date}
+                      className={`tl-grass-cell tl-grass-${grassLevel(d.count)}`}
+                      title={d.count > 0 ? `${d.date} · TIL ${d.count}개` : d.date}
+                    />
+                  ))}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>

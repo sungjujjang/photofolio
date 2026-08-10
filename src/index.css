@@ -1846,6 +1846,36 @@ button {
   padding-bottom: 4px;
   scrollbar-width: thin;
 }
+.tl-grass-inner {
+  width: max-content;
+  margin: 0 auto;
+}
+.tl-grass-years {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.tl-grass-year {
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-dim);
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+.tl-grass-year:hover {
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+.tl-grass-year-active {
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  border-color: transparent;
+  color: #fff;
+}
 .tl-grass-months {
   display: flex;
   gap: 3px;
