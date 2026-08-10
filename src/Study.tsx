@@ -557,6 +557,14 @@ export default function StudyPage() {
           : undefined
         : undefined
 
+  const sourceUrl = isVelogPost
+    ? velogItem
+      ? `https://velog.io/@${VELOG_USER}/${velogItem.urlSlug}`
+      : undefined
+    : route.view === 'post' && current
+      ? `https://github.com/${REPO}/blob/${BRANCH}/${current.path}`
+      : undefined
+
   const navList = useMemo(
     () =>
       isVelogPost
@@ -723,6 +731,11 @@ export default function StudyPage() {
                     </span>
                   ))}
                 </span>
+              )}
+              {sourceUrl && (
+                <a className="article-source-btn" href={sourceUrl} target="_blank" rel="noreferrer">
+                  {isVelogPost ? '원본 Velog 보기 ↗' : 'GitHub 원문 보기 ↗'}
+                </a>
               )}
             </div>
           </div>
