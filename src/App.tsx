@@ -301,19 +301,26 @@ function Hero() {
           >
             {icons.mail} Contact Me
           </a>
+          <button
+            className="btn btn-ghost"
+            onClick={() => navigate('/study')}
+            style={{ animationDelay: '1.35s' }}
+          >
+            📚 Study Blog
+          </button>
           <a
             className="btn btn-ghost"
             href={profile.github}
             target="_blank"
             rel="noreferrer"
-            style={{ animationDelay: '1.35s' }}
+            style={{ animationDelay: '1.5s' }}
           >
             {icons.github} GitHub
           </a>
           <button
             className="btn btn-ghost"
             onClick={() => document.getElementById('projects')?.scrollIntoView({ behavior: 'smooth' })}
-            style={{ animationDelay: '1.5s' }}
+            style={{ animationDelay: '1.65s' }}
           >
             View Projects ↓
           </button>
