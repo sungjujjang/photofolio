@@ -97,7 +97,8 @@ const FLOATERS = ['⚡', '🚀', '☁️', '🐳', '☕', '✨', '💻', '🔮']
 type Route = 'home' | 'study'
 
 function getHashRoute(): Route {
-  return window.location.hash.replace(/^#\/?/, '') === 'study' ? 'study' : 'home'
+  const h = window.location.hash.replace(/^#\/?/, '')
+  return h === 'study' || h.startsWith('study/') ? 'study' : 'home'
 }
 
 function useHashRoute(): Route {

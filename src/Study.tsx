@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { marked } from 'marked'
 import DOMPurify from 'dompurify'
 import { PerformanceToggle, ThemeToggle } from './theme'
@@ -44,6 +44,15 @@ type TreeNode = {
   children?: TreeNode[]
 }
 
+type Post = {
+  path: string
+  name: string
+  title: string
+  date: string | null
+  category: string
+  emoji: string
+}
+
 function isMdFile(path: string) {
   return /\.md$/i.test(path) && !path.includes('.swp')
 }
@@ -69,31 +78,7 @@ function buildTree(mdPaths: string[]): TreeNode[] {
     })
   }
 
-  const sortRecursive = (nodes: TreeNode[]) => {
-    nodes.sort((a, b) => {
-      if (a.type !== b.type) return a.type === 'folder' ? -1 : 1
-      return a.name.localeCompare(b.name, 'ko')
-    })
-    nodes.forEach((n) => n.children && sortRecursive(n.children))
-  }
-  sortRecursive(root)
-
-  const pruneEmpty = (nodes: TreeNode[]) => {
-    const pruned: TreeNode[] = []
-    for (const n of nodes) {
-      if (n.type === 'folder') {
-        if (!n.children || n.children.length === 0) continue
-        const kids = pruneEmpty(n.children)
-        if (kids.length === 0) continue
-        pruned.push({ ...n, children: kids })
-      } else {
-        pruned.push(n)
-      }
-    }
-    return pruned
-  }
-
-  return pruneEmpty(root)
+  return root
 }
 
 const emojiFor = (dir: string) => {
@@ -110,6 +95,37 @@ const emojiFor = (dir: string) => {
   }
   const top = dir.split('/')[0]
   return map[top] ?? '📁'
+}
+
+function titleFromName(name: string): { title: string; date: string | null } {
+  const base = name.replace(/\.md$/i, '')
+  const m = base.match(/^(\d{4})(\d{2})(\d{2})[-_]?(.*)$/)
+  if (m) {
+    return {
+      date: `${m[1]}-${m[2]}-${m[3]}`,
+      title: m[4] ? m[4].replace(/[-_]/g, ' ') : `${m[1]}-${m[2]}-${m[3]}`,
+    }
+  }
+  return { date: null, title: base.replace(/[-_]/g, ' ') }
+}
+
+function collectPosts(nodes: TreeNode[]): Post[] {
+  const posts: Post[] = []
+  const walk = (list: TreeNode[]) => {
+    for (const n of list) {
+      if (n.type === 'file') {
+        const parts = n.path.split('/')
+        const category = parts.length > 1 ? parts[0] : '기타'
+        const { title, date } = titleFromName(n.name)
+        posts.push({ path: n.path, name: n.name, title, date, category, emoji: emojiFor(category) })
+      } else if (n.children) {
+        walk(n.children)
+      }
+    }
+  }
+  walk(nodes)
+  posts.sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''))
+  return posts
 }
 
 /* fetch tree with localStorage cache + jsdelivr fallback */
@@ -153,100 +169,52 @@ function renderMarkdown(md: string, fileDir: string): string {
   })
 }
 
-function FileTree({
-  nodes,
-  depth,
-  selected,
-  onSelect,
-}: {
-  nodes: TreeNode[]
-  depth: number
-  selected: string | null
-  onSelect: (path: string) => void
-}) {
-  return (
-    <>
-      {nodes.map((node) =>
-        node.type === 'folder' ? (
-          <FolderNode key={node.path} node={node} depth={depth} selected={selected} onSelect={onSelect} />
-        ) : (
-          <button
-            key={node.path}
-            className={`tree-file ${selected === node.path ? 'tree-file-active' : ''}`}
-            style={{ paddingLeft: `${16 + depth * 18}px` }}
-            onClick={() => onSelect(node.path)}
-          >
-            <span className="tree-file-icon">📄</span>
-            <span className="tree-file-name">{node.name}</span>
-          </button>
-        ),
-      )}
-    </>
-  )
-}
-
-function FolderNode({
-  node,
-  depth,
-  selected,
-  onSelect,
-}: {
-  node: TreeNode
-  depth: number
-  selected: string | null
-  onSelect: (path: string) => void
-}) {
-  const [open, setOpen] = useState(depth < 1)
-  const children = node.children ?? []
-
-  return (
-    <div className="tree-folder">
-      <button
-        className="tree-folder-head"
-        style={{ paddingLeft: `${16 + depth * 18}px` }}
-        onClick={() => setOpen((v) => !v)}
-      >
-        <span className={`tree-caret ${open ? 'tree-caret-open' : ''}`}>▸</span>
-        <span className="tree-folder-icon">{emojiFor(node.path)}</span>
-        <span className="tree-folder-name">{node.name}</span>
-        <span className="tree-folder-count">{children.length}</span>
-      </button>
-      {open && (
-        <div className="tree-children">
-          <FileTree nodes={children} depth={depth + 1} selected={selected} onSelect={onSelect} />
-        </div>
-      )}
-    </div>
-  )
-}
-
-function findFirstFile(nodes: TreeNode[]): string | null {
-  for (const n of nodes) {
-    if (n.type === 'file') return n.path
-    if (n.children) {
-      const found = findFirstFile(n.children)
-      if (found) return found
+function selectedFromHash(): string | null {
+  const h = window.location.hash.replace(/^#\/?/, '')
+  if (h === 'study') return null
+  if (h.startsWith('study/')) {
+    const p = h.slice('study/'.length)
+    try {
+      return decodeURIComponent(p)
+    } catch {
+      return null
     }
   }
   return null
 }
 
+const dateBadge = (date: string | null) => {
+  if (!date) return '📅 미정'
+  const [y, m, d] = date.split('-')
+  return `📅 ${y}.${m}.${d}`
+}
+
 export default function StudyPage() {
   const [tree, setTree] = useState<TreeNode[] | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [selected, setSelected] = useState<string | null>(null)
+  const [selected, setSelected] = useState<string | null>(selectedFromHash)
   const [content, setContent] = useState<string>('')
   const [loading, setLoading] = useState(false)
 
+  const posts = useMemo(() => (tree ? collectPosts(tree) : []), [tree])
+
+  const categories = useMemo(() => {
+    const map = new Map<string, Post[]>()
+    for (const p of posts) {
+      const arr = map.get(p.category) ?? []
+      arr.push(p)
+      map.set(p.category, arr)
+    }
+    return [...map.entries()]
+      .map(([name, items]) => ({ name, emoji: emojiFor(name), count: items.length, items }))
+      .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, 'ko'))
+  }, [posts])
+
   useEffect(() => {
-    window.scrollTo(0, 0)
     let alive = true
     fetchTree()
       .then((t) => {
-        if (!alive) return
-        setTree(t)
-        const first = findFirstFile(t)
-        if (first) setSelected(first)
+        if (alive) setTree(t)
       })
       .catch((e: unknown) => {
         if (alive) setError(e instanceof Error ? e.message : 'failed to load')
@@ -257,9 +225,20 @@ export default function StudyPage() {
   }, [])
 
   useEffect(() => {
+    const onHash = () => setSelected(selectedFromHash())
+    window.addEventListener('hashchange', onHash)
+    return () => window.removeEventListener('hashchange', onHash)
+  }, [])
+
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [selected])
+
+  useEffect(() => {
     if (!selected) return
     let alive = true
     setLoading(true)
+    setContent('')
     const dir = selected.includes('/') ? selected.split('/').slice(0, -1).join('/') : ''
     fetch(`${RAW_BASE}/${selected}`)
       .then((res) => {
@@ -271,7 +250,10 @@ export default function StudyPage() {
         setContent(renderMarkdown(md, dir))
       })
       .catch((e: unknown) => {
-        if (alive) setContent(`<p class="md-error">⚠️ 파일을 불러오지 못했습니다. (${e instanceof Error ? e.message : 'unknown'})</p>`)
+        if (alive)
+          setContent(
+            `<p class="md-error">⚠️ 글을 불러오지 못했습니다. (${e instanceof Error ? e.message : 'unknown'})</p>`,
+          )
       })
       .finally(() => alive && setLoading(false))
     return () => {
@@ -279,28 +261,34 @@ export default function StudyPage() {
     }
   }, [selected])
 
-  const doc = selected ?? ''
-  const title = useMemo(() => {
-    if (!doc) return ''
-    const base = doc.split('/').pop() ?? ''
-    return base.replace(/^\d+[-_]?/, '').replace(/\.md$/i, '').replace(/[-_]/g, ' ')
-  }, [doc])
-
-  const goHome = () => {
+  const openPost = (path: string) => {
+    window.location.hash = `#/study/${encodeURIComponent(path)}`
+    setSelected(path)
+  }
+  const goBlogHome = () => {
+    window.location.hash = '#/study'
+    setSelected(null)
+  }
+  const goPortfolio = () => {
     window.location.hash = '#/'
   }
+
+  const current = selected ? posts.find((p) => p.path === selected) : undefined
+  const idx = current ? posts.indexOf(current) : -1
+  const newer = idx > 0 ? posts[idx - 1] : undefined
+  const older = idx >= 0 && idx < posts.length - 1 ? posts[idx + 1] : undefined
 
   return (
     <div className="study-page">
       <header className="study-topbar">
-        <button className="study-logo" onClick={goHome}>
+        <button className="study-logo" onClick={goPortfolio}>
           SJ<span className="nav-logo-dot">.</span>
         </button>
 
-        <div className="study-topbar-center">
+        <button className="study-topbar-center" onClick={goBlogHome}>
           <span className="study-topbar-title">📚 Study Blog</span>
           <span className="study-topbar-sub">TIL · {REPO}</span>
-        </div>
+        </button>
 
         <div className="study-topbar-right">
           <a
@@ -316,60 +304,176 @@ export default function StudyPage() {
           </a>
           <PerformanceToggle />
           <ThemeToggle />
-          <button className="study-home-btn" onClick={goHome}>
-            ← <span>Home</span>
+          <button className="study-home-btn" onClick={selected ? goBlogHome : goPortfolio}>
+            {selected ? '← 목록' : '← Home'}
           </button>
         </div>
       </header>
 
-      <div className="study-container">
-        <aside className="study-sidebar">
-          <div className="study-sidebar-head">
-            <span className="study-repo-icon">📦</span>
-            <div>
-              <div className="study-repo-name">study</div>
-              <div className="study-repo-branch">branch · main</div>
+      {selected ? (
+        <main className="article-page">
+          <nav className="article-breadcrumb">
+            <button onClick={goBlogHome}>🏠 Blog</button>
+            <span className="article-bc-sep">/</span>
+            <span>
+              {current?.emoji} {current?.category ?? ''}
+            </span>
+            <span className="article-bc-sep">/</span>
+            <span className="article-bc-current">{current?.title ?? ''}</span>
+          </nav>
+
+          <div className="article-hero">
+            <span className="article-hero-emoji">{current?.emoji ?? '📄'}</span>
+            <h1 className="article-title">{current?.title ?? ''}</h1>
+            <div className="article-meta">
+              <span className="article-meta-chip">{current?.category ?? '기타'}</span>
+              <span className="article-meta-chip">{dateBadge(current?.date ?? null)}</span>
+              <span className="article-meta-chip article-meta-path">{current?.path ?? ''}</span>
             </div>
           </div>
 
-          {error && <div className="study-error">⚠️ {error}</div>}
-          {!tree && !error && (
-            <div className="study-loading">
+          {loading && (
+            <div className="article-loading">
               <span className="spinner" />
-              <span>트리 로딩 중...</span>
+              <span>글을 불러오는 중...</span>
             </div>
           )}
-          {tree && (
-            <div className="tree-scroll">
-              <FileTree nodes={tree} depth={0} selected={selected} onSelect={setSelected} />
-            </div>
-          )}
-        </aside>
+          <article className="md-body" dangerouslySetInnerHTML={{ __html: content }} />
 
-        <main className="study-content">
-          {!selected && !error && (
-            <div className="study-empty">
-              <span className="study-empty-icon">👈</span>
-              <p>왼쪽에서 TIL 파일을 선택하세요</p>
+          <div className="article-nav">
+            <button
+              className="article-nav-btn"
+              onClick={() => newer && openPost(newer.path)}
+              disabled={!newer}
+            >
+              <span className="article-nav-dir">← 최신 글</span>
+              <span className="article-nav-title">{newer ? newer.title : '첫 글입니다'}</span>
+            </button>
+            <button className="article-list-btn" onClick={goBlogHome}>
+              📚 목록
+            </button>
+            <button
+              className="article-nav-btn article-nav-right"
+              onClick={() => older && openPost(older.path)}
+              disabled={!older}
+            >
+              <span className="article-nav-dir">이전 글 →</span>
+              <span className="article-nav-title">{older ? older.title : '마지막 글입니다'}</span>
+            </button>
+          </div>
+        </main>
+      ) : (
+        <main className="blog-page">
+          <div className="blog-hero">
+            <div className="blog-hero-orb blog-hero-orb-a" />
+            <div className="blog-hero-orb blog-hero-orb-b" />
+            <span className="blog-hero-badge">📚 TIL · 학습 기록</span>
+            <h1 className="blog-hero-title">
+              Study <span className="grad-text">Blog</span>
+            </h1>
+            <p className="blog-hero-sub">
+              {tree ? `${posts.length}개의 TIL을 카테고리별로 기록한 기술 블로그` : 'study 저장소에서 TIL을 불러오고 있어요'}
+            </p>
+            {tree && (
+              <div className="blog-categories">
+                {categories.map((cat) => (
+                  <a
+                    key={cat.name}
+                    className="blog-cat-chip"
+                    href={`#${cat.name}`}
+                    onClick={(e) => {
+                      e.preventDefault()
+                      document.getElementById(`blog-cat-${cat.name}`)?.scrollIntoView({ behavior: 'smooth' })
+                    }}
+                  >
+                    <span>{cat.emoji}</span> {cat.name}
+                    <b>{cat.count}</b>
+                  </a>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {error && <div className="study-error blog-error">⚠️ {error}</div>}
+          {!tree && !error && (
+            <div className="study-loading blog-loading">
+              <span className="spinner" />
+              <span>블로그를 불러오는 중...</span>
             </div>
           )}
-          {selected && (
-            <>
-              <div className="study-doc-head">
-                <h3 className="study-doc-title">{title}</h3>
-                <div className="study-doc-meta">
-                  <span className="study-doc-path">{selected}</span>
-                  {loading && <span className="study-doc-loading">불러오는 중...</span>}
-                </div>
-              </div>
-              <article
-                className="md-body"
-                dangerouslySetInnerHTML={{ __html: content }}
-              />
-            </>
+
+          {tree && (
+            <div className="blog-sections">
+              {categories.map((cat, ci) => (
+                <section key={cat.name} id={`blog-cat-${cat.name}`} className="blog-category">
+                  <Reveal delay={ci * 60}>
+                    <header className="blog-cat-head">
+                      <span className="blog-cat-emoji">{cat.emoji}</span>
+                      <h2 className="blog-cat-name">{cat.name}</h2>
+                      <span className="blog-cat-count">{cat.count}개</span>
+                      <span className="blog-cat-line" />
+                    </header>
+                  </Reveal>
+
+                  <div className="blog-post-list">
+                    {cat.items.map((post, pi) => (
+                      <Reveal key={post.path} delay={(ci % 3) * 40 + pi * 25}>
+                        <button className="blog-post" onClick={() => openPost(post.path)}>
+                          <span className="blog-post-emoji">{post.emoji}</span>
+                          <span className="blog-post-body">
+                            <span className="blog-post-title">{post.title}</span>
+                            <span className="blog-post-path">{post.path}</span>
+                          </span>
+                          <span className="blog-post-date">{dateBadge(post.date)}</span>
+                          <span className="blog-post-arrow">→</span>
+                        </button>
+                      </Reveal>
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </div>
           )}
         </main>
-      </div>
+      )}
+    </div>
+  )
+}
+
+/* tiny local reveal wrapper to avoid cross-imports */
+function Reveal({
+  children,
+  delay = 0,
+}: {
+  children: React.ReactNode
+  delay?: number
+}) {
+  const [visible, setVisible] = useState(false)
+  const ref = useRef<HTMLDivElement | null>(null)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const ob = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((en) => {
+          if (en.isIntersecting) {
+            setVisible(true)
+            ob.disconnect()
+          }
+        })
+      },
+      { threshold: 0.08 },
+    )
+    ob.observe(el)
+    return () => ob.disconnect()
+  }, [])
+  return (
+    <div
+      ref={ref}
+      className={`reveal ${visible ? 'reveal-visible' : ''}`}
+      style={{ transitionDelay: `${delay}ms` }}
+    >
+      {children}
     </div>
   )
 }
