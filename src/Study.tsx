@@ -278,6 +278,11 @@ export default function StudyPage() {
   }, [])
 
   useEffect(() => {
+    const h = window.location.hash.replace(/^#\/?/, '')
+    if (h.startsWith('study/')) history.replaceState(null, '', '#/study')
+  }, [])
+
+  useEffect(() => {
     window.scrollTo(0, 0)
   }, [route])
 
@@ -308,20 +313,17 @@ export default function StudyPage() {
     }
   }, [route])
 
-  const openFolder = (path: string) => {
-    window.location.hash = `#/study/${encodeURIComponent(path)}`
-    setRoute({ view: 'folder', path })
-  }
-  const openPost = (path: string) => {
-    window.location.hash = `#/study/${encodeURIComponent(path)}`
-    setRoute({ view: 'post', path })
-  }
-  const goHome = () => {
-    window.location.hash = '#/study'
-    setRoute({ view: 'home' })
-  }
+  const openFolder = (path: string) => setRoute({ view: 'folder', path })
+  const openPost = (path: string) => setRoute({ view: 'post', path })
+  const goHome = () => setRoute({ view: 'home' })
   const goPortfolio = () => {
     window.location.hash = '#/'
+  }
+  const goAbout = () => {
+    window.location.hash = '#/'
+    window.setTimeout(() => {
+      document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' })
+    }, 120)
   }
 
   const activePath = route.view === 'home' ? '' : route.path
@@ -398,12 +400,12 @@ export default function StudyPage() {
             </svg>
             <span>GitHub</span>
           </a>
-          <button className="study-my-btn" onClick={goPortfolio}>
+          <button className="study-about-btn" onClick={goAbout}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="1em" height="1em">
-              <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-              <path d="M9 22V12h6v10" />
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
             </svg>
-            <span>내 페이지</span>
+            <span>소개</span>
           </button>
           <PerformanceToggle />
           <ThemeToggle />
@@ -610,24 +612,12 @@ export default function StudyPage() {
                         className="blog-cat-card"
                         onClick={() => (cat.path === '__root__' ? openFolder('__root__') : openFolder(cat.path))}
                       >
-                        <span className="blog-cat-card-top">
-                          <span className="blog-cat-card-emoji">{cat.emoji}</span>
-                          <span className="blog-cat-card-arrow">→</span>
-                        </span>
+                        <span className="blog-cat-card-emoji">{cat.emoji}</span>
                         <span className="blog-cat-card-name">{cat.name}</span>
                         <span className="blog-cat-card-meta">
-                          {cat.path === '__root__'
-                            ? '루트에 작성된 글 모음'
-                            : cat.subCount > 0
-                              ? `${cat.subCount}개의 하위 폴더로 구성`
-                              : '폴더 하나로 작성된 글 모음'}
+                          {cat.postCount}개의 글 · {cat.subCount}개 하위 폴더
                         </span>
-                        <span className="blog-cat-card-badges">
-                          <span className="blog-cat-card-badge">📄 {cat.postCount}개 글</span>
-                          {cat.subCount > 0 && (
-                            <span className="blog-cat-card-badge">📂 {cat.subCount}개 폴더</span>
-                          )}
-                        </span>
+                        <span className="blog-cat-card-arrow">들어가기 →</span>
                       </button>
                     </Reveal>
                   ))}
