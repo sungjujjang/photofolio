@@ -53,6 +53,19 @@ type Post = {
   emoji: string
 }
 
+type Category = {
+  name: string
+  path: string
+  emoji: string
+  postCount: number
+  subCount: number
+}
+
+type StudyRoute =
+  | { view: 'home' }
+  | { view: 'folder'; path: string }
+  | { view: 'post'; path: string }
+
 function isMdFile(path: string) {
   return /\.md$/i.test(path) && !path.includes('.swp')
 }
@@ -109,23 +122,47 @@ function titleFromName(name: string): { title: string; date: string | null } {
   return { date: null, title: base.replace(/[-_]/g, ' ') }
 }
 
+function postFromNode(n: TreeNode): Post {
+  const parts = n.path.split('/')
+  const category = parts.length > 1 ? parts[0] : '기타'
+  const { title, date } = titleFromName(n.name)
+  return { path: n.path, name: n.name, title, date, category, emoji: emojiFor(category) }
+}
+
 function collectPosts(nodes: TreeNode[]): Post[] {
   const posts: Post[] = []
   const walk = (list: TreeNode[]) => {
     for (const n of list) {
-      if (n.type === 'file') {
-        const parts = n.path.split('/')
-        const category = parts.length > 1 ? parts[0] : '기타'
-        const { title, date } = titleFromName(n.name)
-        posts.push({ path: n.path, name: n.name, title, date, category, emoji: emojiFor(category) })
-      } else if (n.children) {
-        walk(n.children)
-      }
+      if (n.type === 'file') posts.push(postFromNode(n))
+      else if (n.children) walk(n.children)
     }
   }
   walk(nodes)
   posts.sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''))
   return posts
+}
+
+function countPosts(node: TreeNode): number {
+  let count = 0
+  const walk = (list: TreeNode[]) => {
+    for (const n of list) {
+      if (n.type === 'file') count++
+      else if (n.children) walk(n.children)
+    }
+  }
+  walk(node.children ?? [])
+  return count
+}
+
+function findNode(nodes: TreeNode[], path: string): TreeNode | null {
+  for (const n of nodes) {
+    if (n.path === path) return n
+    if (n.children) {
+      const found = findNode(n.children, path)
+      if (found) return found
+    }
+  }
+  return null
 }
 
 /* fetch tree with localStorage cache + jsdelivr fallback */
@@ -169,18 +206,19 @@ function renderMarkdown(md: string, fileDir: string): string {
   })
 }
 
-function selectedFromHash(): string | null {
+function parseRoute(): StudyRoute {
   const h = window.location.hash.replace(/^#\/?/, '')
-  if (h === 'study') return null
+  if (h === 'study') return { view: 'home' }
   if (h.startsWith('study/')) {
     const p = h.slice('study/'.length)
     try {
-      return decodeURIComponent(p)
+      const path = decodeURIComponent(p)
+      return isMdFile(path) ? { view: 'post', path } : { view: 'folder', path }
     } catch {
-      return null
+      return { view: 'home' }
     }
   }
-  return null
+  return { view: 'home' }
 }
 
 const dateBadge = (date: string | null) => {
@@ -189,26 +227,41 @@ const dateBadge = (date: string | null) => {
   return `📅 ${y}.${m}.${d}`
 }
 
+const parentPath = (path: string) => {
+  const parts = path.split('/')
+  parts.pop()
+  return parts.join('/')
+}
+
 export default function StudyPage() {
   const [tree, setTree] = useState<TreeNode[] | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [selected, setSelected] = useState<string | null>(selectedFromHash)
+  const [route, setRoute] = useState<StudyRoute>(parseRoute)
   const [content, setContent] = useState<string>('')
   const [loading, setLoading] = useState(false)
 
   const posts = useMemo(() => (tree ? collectPosts(tree) : []), [tree])
 
-  const categories = useMemo(() => {
-    const map = new Map<string, Post[]>()
-    for (const p of posts) {
-      const arr = map.get(p.category) ?? []
-      arr.push(p)
-      map.set(p.category, arr)
+  const categories = useMemo<Category[]>(() => {
+    if (!tree) return []
+    const cats: Category[] = []
+    for (const n of tree) {
+      if (n.type === 'folder') {
+        cats.push({
+          name: n.name,
+          path: n.path,
+          emoji: emojiFor(n.path),
+          postCount: countPosts(n),
+          subCount: (n.children ?? []).filter((c) => c.type === 'folder').length,
+        })
+      }
     }
-    return [...map.entries()]
-      .map(([name, items]) => ({ name, emoji: emojiFor(name), count: items.length, items }))
-      .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, 'ko'))
-  }, [posts])
+    const rootFiles = tree.filter((n) => n.type === 'file')
+    if (rootFiles.length) {
+      cats.push({ name: '기타', path: '__root__', emoji: '📄', postCount: rootFiles.length, subCount: 0 })
+    }
+    return cats
+  }, [tree])
 
   useEffect(() => {
     let alive = true
@@ -225,22 +278,22 @@ export default function StudyPage() {
   }, [])
 
   useEffect(() => {
-    const onHash = () => setSelected(selectedFromHash())
+    const onHash = () => setRoute(parseRoute())
     window.addEventListener('hashchange', onHash)
     return () => window.removeEventListener('hashchange', onHash)
   }, [])
 
   useEffect(() => {
     window.scrollTo(0, 0)
-  }, [selected])
+  }, [route])
 
   useEffect(() => {
-    if (!selected) return
+    if (route.view !== 'post') return
     let alive = true
     setLoading(true)
     setContent('')
-    const dir = selected.includes('/') ? selected.split('/').slice(0, -1).join('/') : ''
-    fetch(`${RAW_BASE}/${selected}`)
+    const dir = route.path.includes('/') ? route.path.split('/').slice(0, -1).join('/') : ''
+    fetch(`${RAW_BASE}/${route.path}`)
       .then((res) => {
         if (!res.ok) throw new Error(`${res.status}`)
         return res.text()
@@ -259,33 +312,96 @@ export default function StudyPage() {
     return () => {
       alive = false
     }
-  }, [selected])
+  }, [route])
 
+  const openFolder = (path: string) => {
+    window.location.hash = `#/study/${encodeURIComponent(path)}`
+    setRoute({ view: 'folder', path })
+  }
   const openPost = (path: string) => {
     window.location.hash = `#/study/${encodeURIComponent(path)}`
-    setSelected(path)
+    setRoute({ view: 'post', path })
   }
-  const goBlogHome = () => {
+  const goHome = () => {
     window.location.hash = '#/study'
-    setSelected(null)
+    setRoute({ view: 'home' })
   }
   const goPortfolio = () => {
     window.location.hash = '#/'
   }
 
-  const current = selected ? posts.find((p) => p.path === selected) : undefined
+  const activePath = route.view === 'home' ? '' : route.path
+  const isActiveCat = (cat: Category) =>
+    cat.path === '__root__'
+      ? activePath === '__root__'
+      : activePath === cat.path || activePath.startsWith(cat.path + '/')
+
+  const current =
+    route.view === 'post' ? posts.find((p) => p.path === route.path) : undefined
   const idx = current ? posts.indexOf(current) : -1
   const newer = idx > 0 ? posts[idx - 1] : undefined
   const older = idx >= 0 && idx < posts.length - 1 ? posts[idx + 1] : undefined
 
+  const backAction = () => {
+    if (route.view === 'post') {
+      const parent = parentPath(route.path)
+      if (parent) openFolder(parent)
+      else goHome()
+    } else if (route.view === 'folder') {
+      goHome()
+    } else {
+      goPortfolio()
+    }
+  }
+  const backLabel =
+    route.view === 'post' ? '← 폴더' : route.view === 'folder' ? '← 전체' : '← Home'
+
+  const folderNode =
+    route.view === 'folder'
+      ? route.path === '__root__'
+        ? ({
+            name: '기타',
+            path: '__root__',
+            type: 'folder',
+            children: tree?.filter((n) => n.type === 'file'),
+          } as TreeNode)
+        : findNode(tree ?? [], route.path)
+      : null
+
+  const folderFiles = (folderNode?.children ?? [])
+    .filter((c) => c.type === 'file')
+    .map(postFromNode)
+  const subFolders = (folderNode?.children ?? [])
+    .filter((c) => c.type === 'folder')
+    .map((f) => ({
+      name: f.name,
+      path: f.path,
+      emoji: emojiFor(f.path),
+      postCount: countPosts(f),
+    }))
+
+  const breadcrumb = useMemo(() => {
+    if (route.view === 'home') return []
+    if (route.path === '__root__') return [{ label: '기타', path: '__root__' }]
+    const segs = route.path.split('/')
+    const items: { label: string; path: string }[] = []
+    let acc = ''
+    segs.forEach((seg) => {
+      acc = acc ? `${acc}/${seg}` : seg
+      items.push({ label: seg, path: acc })
+    })
+    return items
+  }, [route])
+
   return (
     <div className="study-page">
-      <header className="study-topbar">
+      <div className="study-header">
+        <header className="study-topbar">
         <button className="study-logo" onClick={goPortfolio}>
           SJ<span className="nav-logo-dot">.</span>
         </button>
 
-        <button className="study-topbar-center" onClick={goBlogHome}>
+        <button className="study-topbar-center" onClick={goHome}>
           <span className="study-topbar-title">📚 Study Blog</span>
           <span className="study-topbar-sub">TIL · {REPO}</span>
         </button>
@@ -304,21 +420,45 @@ export default function StudyPage() {
           </a>
           <PerformanceToggle />
           <ThemeToggle />
-          <button className="study-home-btn" onClick={selected ? goBlogHome : goPortfolio}>
-            {selected ? '← 목록' : '← Home'}
+          <button className="study-home-btn" onClick={backAction}>
+            {backLabel}
           </button>
         </div>
       </header>
 
-      {selected ? (
+      <nav className="study-catbar">
+        <button
+          className={`study-cat-chip ${route.view === 'home' ? 'study-cat-chip-active' : ''}`}
+          onClick={goHome}
+        >
+          🏠 전체
+        </button>
+        {categories.map((cat) => (
+          <button
+            key={cat.path}
+            className={`study-cat-chip ${isActiveCat(cat) ? 'study-cat-chip-active' : ''}`}
+            onClick={() => (cat.path === '__root__' ? openFolder('__root__') : openFolder(cat.path))}
+          >
+            <span>{cat.emoji}</span> {cat.name}
+            <b>{cat.postCount}</b>
+          </button>
+        ))}
+      </nav>
+      </div>
+
+      {route.view === 'post' ? (
         <main className="article-page">
           <nav className="article-breadcrumb">
-            <button onClick={goBlogHome}>🏠 Blog</button>
+            <button onClick={goHome}>🏠 Blog</button>
             <span className="article-bc-sep">/</span>
-            <span>
-              {current?.emoji} {current?.category ?? ''}
-            </span>
-            <span className="article-bc-sep">/</span>
+            {breadcrumb.slice(0, -1).map((item, bi) => (
+              <span key={bi}>
+                <button onClick={() => openFolder(item.path)}>
+                  {item.label === '기타' ? '기타' : item.label}
+                </button>
+                <span className="article-bc-sep">/</span>
+              </span>
+            ))}
             <span className="article-bc-current">{current?.title ?? ''}</span>
           </nav>
 
@@ -349,7 +489,7 @@ export default function StudyPage() {
               <span className="article-nav-dir">← 최신 글</span>
               <span className="article-nav-title">{newer ? newer.title : '첫 글입니다'}</span>
             </button>
-            <button className="article-list-btn" onClick={goBlogHome}>
+            <button className="article-list-btn" onClick={goHome}>
               📚 목록
             </button>
             <button
@@ -362,62 +502,74 @@ export default function StudyPage() {
             </button>
           </div>
         </main>
-      ) : (
-        <main className="blog-page">
-          <div className="blog-hero">
-            <div className="blog-hero-orb blog-hero-orb-a" />
-            <div className="blog-hero-orb blog-hero-orb-b" />
-            <span className="blog-hero-badge">📚 TIL · 학습 기록</span>
-            <h1 className="blog-hero-title">
-              Study <span className="grad-text">Blog</span>
-            </h1>
-            <p className="blog-hero-sub">
-              {tree ? `${posts.length}개의 TIL을 카테고리별로 기록한 기술 블로그` : 'study 저장소에서 TIL을 불러오고 있어요'}
-            </p>
-            {tree && (
-              <div className="blog-categories">
-                {categories.map((cat) => (
-                  <a
-                    key={cat.name}
-                    className="blog-cat-chip"
-                    href={`#${cat.name}`}
-                    onClick={(e) => {
-                      e.preventDefault()
-                      document.getElementById(`blog-cat-${cat.name}`)?.scrollIntoView({ behavior: 'smooth' })
-                    }}
-                  >
-                    <span>{cat.emoji}</span> {cat.name}
-                    <b>{cat.count}</b>
-                  </a>
-                ))}
-              </div>
-            )}
-          </div>
+      ) : route.view === 'folder' ? (
+        <main className="blog-page folder-page">
+          <nav className="article-breadcrumb">
+            <button onClick={goHome}>🏠 Blog</button>
+            <span className="article-bc-sep">/</span>
+            {breadcrumb.map((item, bi) => {
+              const isLast = bi === breadcrumb.length - 1
+              return (
+                <span key={bi}>
+                  {isLast ? (
+                    <span className="article-bc-current">
+                      {folderNode ? `${folderNode.name === '기타' ? '📄' : emojiFor(folderNode.path)} ${folderNode.name}` : item.label}
+                    </span>
+                  ) : (
+                    <button onClick={() => openFolder(item.path)}>{item.label}</button>
+                  )}
+                  {!isLast && <span className="article-bc-sep">/</span>}
+                </span>
+              )
+            })}
+          </nav>
 
           {error && <div className="study-error blog-error">⚠️ {error}</div>}
           {!tree && !error && (
             <div className="study-loading blog-loading">
               <span className="spinner" />
-              <span>블로그를 불러오는 중...</span>
+              <span>폴더를 불러오는 중...</span>
             </div>
           )}
 
-          {tree && (
-            <div className="blog-sections">
-              {categories.map((cat, ci) => (
-                <section key={cat.name} id={`blog-cat-${cat.name}`} className="blog-category">
-                  <Reveal delay={ci * 60}>
-                    <header className="blog-cat-head">
-                      <span className="blog-cat-emoji">{cat.emoji}</span>
-                      <h2 className="blog-cat-name">{cat.name}</h2>
-                      <span className="blog-cat-count">{cat.count}개</span>
-                      <span className="blog-cat-line" />
-                    </header>
-                  </Reveal>
+          {folderNode && (
+            <>
+              <header className="folder-hero">
+                <span className="folder-hero-emoji">
+                  {folderNode.path === '__root__' ? '📄' : emojiFor(folderNode.path)}
+                </span>
+                <h1 className="folder-hero-title">{folderNode.name === '기타' ? '기타' : folderNode.name}</h1>
+                <p className="folder-hero-meta">
+                  {subFolders.length}개 하위 폴더 · {folderFiles.length}개의 글
+                </p>
+              </header>
 
+              {subFolders.length > 0 && (
+                <section className="folder-section">
+                  <h2 className="folder-section-title">📂 하위 폴더</h2>
+                  <div className="folder-grid">
+                    {subFolders.map((sub, si) => (
+                      <Reveal key={sub.path} delay={si * 40}>
+                        <button className="folder-card" onClick={() => openFolder(sub.path)}>
+                          <span className="folder-card-emoji">{sub.emoji}</span>
+                          <span className="folder-card-body">
+                            <span className="folder-card-name">{sub.name}</span>
+                            <span className="folder-card-sub">{sub.postCount}개의 글</span>
+                          </span>
+                          <span className="folder-card-arrow">→</span>
+                        </button>
+                      </Reveal>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {folderFiles.length > 0 && (
+                <section className="folder-section">
+                  <h2 className="folder-section-title">📝 글 목록</h2>
                   <div className="blog-post-list">
-                    {cat.items.map((post, pi) => (
-                      <Reveal key={post.path} delay={(ci % 3) * 40 + pi * 25}>
+                    {folderFiles.map((post, pi) => (
+                      <Reveal key={post.path} delay={pi * 25}>
                         <button className="blog-post" onClick={() => openPost(post.path)}>
                           <span className="blog-post-emoji">{post.emoji}</span>
                           <span className="blog-post-body">
@@ -431,8 +583,78 @@ export default function StudyPage() {
                     ))}
                   </div>
                 </section>
-              ))}
+              )}
+
+              {subFolders.length === 0 && folderFiles.length === 0 && (
+                <div className="folder-empty">📭 이 폴더에는 아직 글이 없어요.</div>
+              )}
+            </>
+          )}
+        </main>
+      ) : (
+        <main className="blog-page">
+          <div className="blog-hero">
+            <div className="blog-hero-orb blog-hero-orb-a" />
+            <div className="blog-hero-orb blog-hero-orb-b" />
+            <span className="blog-hero-badge">📚 TIL · 학습 기록</span>
+            <h1 className="blog-hero-title">
+              Study <span className="grad-text">Blog</span>
+            </h1>
+            <p className="blog-hero-sub">
+              {tree ? `${posts.length}개의 TIL을 폴더 구조로 기록한 기술 블로그` : 'study 저장소에서 TIL을 불러오고 있어요'}
+            </p>
+          </div>
+
+          {error && <div className="study-error blog-error">⚠️ {error}</div>}
+          {!tree && !error && (
+            <div className="study-loading blog-loading">
+              <span className="spinner" />
+              <span>블로그를 불러오는 중...</span>
             </div>
+          )}
+
+          {tree && (
+            <>
+              <section className="folder-section">
+                <h2 className="folder-section-title">🗂️ 카테고리</h2>
+                <div className="blog-cat-grid">
+                  {categories.map((cat, ci) => (
+                    <Reveal key={cat.path} delay={ci * 50}>
+                      <button
+                        className="blog-cat-card"
+                        onClick={() => (cat.path === '__root__' ? openFolder('__root__') : openFolder(cat.path))}
+                      >
+                        <span className="blog-cat-card-emoji">{cat.emoji}</span>
+                        <span className="blog-cat-card-name">{cat.name}</span>
+                        <span className="blog-cat-card-meta">
+                          {cat.postCount}개의 글 · {cat.subCount}개 하위 폴더
+                        </span>
+                        <span className="blog-cat-card-arrow">들어가기 →</span>
+                      </button>
+                    </Reveal>
+                  ))}
+                </div>
+              </section>
+
+              <section className="folder-section">
+                <h2 className="folder-section-title">✨ 최근 글</h2>
+                <div className="blog-post-list">
+                  {posts.slice(0, 8).map((post, pi) => (
+                    <Reveal key={post.path} delay={pi * 25}>
+                      <button className="blog-post" onClick={() => openPost(post.path)}>
+                        <span className="blog-post-emoji">{post.emoji}</span>
+                        <span className="blog-post-body">
+                          <span className="blog-post-title">{post.title}</span>
+                          <span className="blog-post-path">{post.path}</span>
+                        </span>
+                        <span className="blog-post-date">{dateBadge(post.date)}</span>
+                        <span className="blog-post-arrow">→</span>
+                      </button>
+                    </Reveal>
+                  ))}
+                </div>
+              </section>
+            </>
           )}
         </main>
       )}
