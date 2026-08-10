@@ -413,6 +413,7 @@ export default function StudyPage() {
   const [loading, setLoading] = useState(false)
   const [velogPosts, setVelogPosts] = useState<VelogPost[]>([])
   const [velogLoading, setVelogLoading] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
 
   const posts = useMemo(() => (tree ? collectPosts(tree) : []), [tree])
 
@@ -560,6 +561,19 @@ export default function StudyPage() {
     window.setTimeout(() => window.scrollTo(0, 0), 50)
   }
 
+  const refreshTree = () => {
+    setRefreshing(true)
+    try {
+      localStorage.removeItem(CACHE_KEY)
+    } catch {
+      /* ignore */
+    }
+    fetchTree()
+      .then((t) => setTree(t))
+      .catch((e: unknown) => setError(e instanceof Error ? e.message : 'failed to load'))
+      .finally(() => setRefreshing(false))
+  }
+
   const activePath =
     route.view === 'folder' || route.view === 'post'
       ? route.path
@@ -600,6 +614,30 @@ export default function StudyPage() {
     : route.view === 'post' && current
       ? `https://github.com/${REPO}/blob/${BRANCH}/${current.path}`
       : undefined
+
+  useEffect(() => {
+    const site = '장성주 (SungJu)'
+    if (route.view === 'post' && current) {
+      document.title = `${current.title} · Study TIL · ${site}`
+    } else if (route.view === 'velog-post' && current) {
+      document.title = `${current.title} · ${site}`
+    } else if (route.view === 'velog-series' && velogSeriesItem) {
+      document.title = `${velogSeriesItem.name} 시리즈 · Study TIL · ${site}`
+    } else if (route.view === 'velog') {
+      document.title = `Velog 포스팅 · Study TIL · ${site}`
+    } else if (route.view === 'folder') {
+      const name =
+        route.path === '__root__'
+          ? '기타 TIL'
+          : `${decodeURIComponent(route.path.split('/').pop() ?? '')} TIL`
+      document.title = `${name} · Study TIL · ${site}`
+    } else {
+      document.title = 'Study TIL · 장성주 (SungJu)'
+    }
+    const canonical =
+      document.querySelector<HTMLLinkElement>('link[rel="canonical"]')
+    if (canonical) canonical.href = `https://dev.sungju.xyz${window.location.pathname}`
+  }, [route, current, velogSeriesItem])
 
   const navList = useMemo(
     () =>
@@ -682,6 +720,18 @@ export default function StudyPage() {
         </div>
 
         <div className="study-topbar-right">
+          <button
+            className="study-repo-link study-refresh-btn"
+            onClick={refreshTree}
+            disabled={refreshing}
+            title="TIL 목록 새로고침 (GitHub 캐시 갱신)"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="1em" height="1em">
+              <path d="M21 12a9 9 0 1 1-2.64-6.36" />
+              <path d="M21 3v6h-6" />
+            </svg>
+            <span>{refreshing ? '갱신 중...' : '새로고침'}</span>
+          </button>
           <a
             className="study-repo-link"
             href={`https://github.com/${REPO}`}

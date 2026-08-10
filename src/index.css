@@ -1581,6 +1581,19 @@ button {
   color: var(--text);
 }
 
+.study-refresh-btn:disabled {
+  opacity: 0.7;
+  cursor: progress;
+}
+.study-refresh-btn:disabled svg {
+  animation: study-spin 0.9s linear infinite;
+}
+@keyframes study-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* ---- category bar ---- */
 .study-catbar {
   max-width: 1040px;

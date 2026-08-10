@@ -769,6 +769,15 @@ function Footer() {
 export default function App() {
   const route = usePathRoute()
 
+  useEffect(() => {
+    if (route === 'home') {
+      document.title = '장성주 (SungJu) · DevOps · Backend 개발자 포트폴리오'
+      const canonical =
+        document.querySelector<HTMLLinkElement>('link[rel="canonical"]')
+      if (canonical) canonical.href = 'https://dev.sungju.xyz/'
+    }
+  }, [route])
+
   return (
     <>
       <CursorGlow />
