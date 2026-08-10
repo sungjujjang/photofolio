@@ -9,7 +9,7 @@ const BRANCH = 'main'
 const VELOG = 'https://velog.io/@sungjujjang/posts'
 const VELOG_USER = 'sungjujjang'
 const VELOG_API = '/velog-api'
-const VELOG_CACHE_KEY = 'ksec-velog-posts'
+const VELOG_CACHE_KEY = 'ksec-velog-posts-v2'
 const VELOG_CACHE_TTL = 6 * 60 * 60 * 1000
 const TREE_URL = `https://api.github.com/repos/${REPO}/git/trees/${BRANCH}?recursive=1`
 const RAW_BASE = `https://raw.githubusercontent.com/${REPO}/${BRANCH}`
@@ -73,6 +73,8 @@ type VelogPost = {
   urlSlug: string
   releasedAt: string
   tags: string[]
+  seriesId: string | null
+  seriesName: string | null
 }
 
 type StudyRoute =
@@ -80,6 +82,7 @@ type StudyRoute =
   | { view: 'folder'; path: string }
   | { view: 'post'; path: string }
   | { view: 'velog' }
+  | { view: 'velog-series'; id: string }
   | { view: 'velog-post'; slug: string }
 
 function isMdFile(path: string) {
@@ -241,6 +244,7 @@ async function fetchVelogPosts(): Promise<VelogPost[]> {
       query: `query Posts($username: String!, $limit: Int) {
         posts(username: $username, limit: $limit) {
           id title url_slug released_at tags
+          series { id name }
         }
       }`,
       variables: { username: VELOG_USER, limit: 100 },
@@ -249,7 +253,14 @@ async function fetchVelogPosts(): Promise<VelogPost[]> {
   if (!res.ok) throw new Error(`velog api ${res.status}`)
   const data = (await res.json()) as {
     data?: {
-      posts?: { id: string; title: string; url_slug: string; released_at: string; tags?: string[] }[]
+      posts?: {
+        id: string
+        title: string
+        url_slug: string
+        released_at: string
+        tags?: string[]
+        series?: { id: string; name: string } | null
+      }[]
     }
   }
   const posts = (data.data?.posts ?? [])
@@ -259,10 +270,12 @@ async function fetchVelogPosts(): Promise<VelogPost[]> {
       urlSlug: p.url_slug,
       releasedAt: p.released_at,
       tags: p.tags ?? [],
+      seriesId: p.series?.id ?? null,
+      seriesName: p.series?.name ?? null,
     }))
     .sort((a, b) => b.releasedAt.localeCompare(a.releasedAt))
   try {
-    localStorage.setItem(VELOG_CACHE_KEY, JSON.stringify({ time: Date.now(), posts }))
+    localStorage.setItem('ksec-velog-posts-v2', JSON.stringify({ time: Date.now(), posts }))
   } catch {
     /* ignore */
   }
@@ -298,6 +311,15 @@ function parseRoute(): StudyRoute {
     /* keep raw */
   }
   if (path === 'velog') return { view: 'velog' }
+  if (path.startsWith('velog/series/')) {
+    let id = path.slice('velog/series/'.length)
+    try {
+      id = decodeURIComponent(id)
+    } catch {
+      /* keep raw */
+    }
+    return { view: 'velog-series', id }
+  }
   if (path.startsWith('velog/')) {
     return { view: 'velog-post', slug: path.slice('velog/'.length) }
   }
@@ -416,6 +438,24 @@ export default function StudyPage() {
     return items.sort((a, b) => (b.date ?? '').localeCompare(a.date ?? '')).slice(0, 8)
   }, [posts, velogPosts])
 
+  const velogSeries = useMemo(() => {
+    const map = new Map<string, { id: string; name: string; posts: VelogPost[] }>()
+    for (const v of velogPosts) {
+      if (!v.seriesId) continue
+      let s = map.get(v.seriesId)
+      if (!s) {
+        s = { id: v.seriesId, name: v.seriesName ?? '시리즈', posts: [] }
+        map.set(v.seriesId, s)
+      }
+      s.posts.push(v)
+    }
+    return [...map.values()].sort((a, b) =>
+      (b.posts[0]?.releasedAt ?? '').localeCompare(a.posts[0]?.releasedAt ?? ''),
+    )
+  }, [velogPosts])
+
+  const velogUngrouped = useMemo(() => velogPosts.filter((v) => !v.seriesId), [velogPosts])
+
   const categories = useMemo<Category[]>(() => {
     if (!tree) return []
     const cats: Category[] = []
@@ -519,17 +559,11 @@ export default function StudyPage() {
     navigate('/')
     window.setTimeout(() => window.scrollTo(0, 0), 50)
   }
-  const goAbout = () => {
-    navigate('/')
-    window.setTimeout(() => {
-      document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' })
-    }, 120)
-  }
 
   const activePath =
     route.view === 'folder' || route.view === 'post'
       ? route.path
-      : route.view === 'velog' || route.view === 'velog-post'
+      : route.view === 'velog' || route.view === 'velog-post' || route.view === 'velog-series'
         ? 'velog'
         : ''
   const isActiveCat = (cat: Category) => {
@@ -542,6 +576,8 @@ export default function StudyPage() {
   const velogItem = isVelogPost
     ? velogPosts.find((v) => v.urlSlug === route.slug)
     : undefined
+  const velogSeriesItem =
+    route.view === 'velog-series' ? velogSeries.find((s) => s.id === route.id) : undefined
   const current =
     route.view === 'post'
       ? posts.find((p) => p.path === route.path)
@@ -612,7 +648,13 @@ export default function StudyPage() {
     }))
 
   const breadcrumb = useMemo(() => {
-    if (route.view === 'home' || route.view === 'velog' || route.view === 'velog-post') return []
+    if (
+      route.view === 'home' ||
+      route.view === 'velog' ||
+      route.view === 'velog-series' ||
+      route.view === 'velog-post'
+    )
+      return []
     if (route.path === '__root__') return [{ label: '기타', path: '__root__' }]
     const segs = route.path.split('/')
     const items: { label: string; path: string }[] = []
@@ -659,13 +701,13 @@ export default function StudyPage() {
           >
             ✍️ <span>Velog</span>
           </a>
-          <button className="study-about-btn" onClick={goAbout}>
+          <a className="study-about-btn" href="https://dev.sungju.xyz/" target="_blank" rel="noreferrer">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="1em" height="1em">
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
               <circle cx="12" cy="7" r="4" />
             </svg>
             <span>소개</span>
-          </button>
+          </a>
           <PerformanceToggle />
           <ThemeToggle />
         </div>
@@ -723,6 +765,14 @@ export default function StudyPage() {
               <span className="article-meta-chip">{current?.category ?? '기타'}</span>
               <span className="article-meta-chip">📅 {dateText(current?.date ?? null)}</span>
               <span className="article-meta-chip article-meta-path">{current?.path ?? ''}</span>
+              {isVelogPost && velogItem && velogItem.seriesId && (
+                <button
+                  className="article-meta-chip article-series-chip"
+                  onClick={() => navigate(`/study/velog/series/${encodeURIComponent(velogItem.seriesId!)}`)}
+                >
+                  📚 {velogItem.seriesName ?? '시리즈'}
+                </button>
+              )}
               {isVelogPost && velogItem && velogItem.tags.length > 0 && (
                 <span className="velog-tags">
                   {velogItem.tags.map((t) => (
@@ -773,23 +823,41 @@ export default function StudyPage() {
             </button>
           </div>
         </main>
-      ) : route.view === 'velog' ? (
+      ) : route.view === 'velog' || route.view === 'velog-series' ? (
         <main className="blog-page folder-page">
           <nav className="article-breadcrumb">
             <button onClick={goHome}>🏠</button>
             <span className="article-bc-sep">/</span>
-            <span className="article-bc-current">Velog</span>
+            {route.view === 'velog-series' ? (
+              <>
+                <button onClick={() => navigate('/study/velog')}>Velog</button>
+                <span className="article-bc-sep">/</span>
+                <span className="article-bc-current">{velogSeriesItem?.name ?? ''}</span>
+              </>
+            ) : (
+              <span className="article-bc-current">Velog</span>
+            )}
           </nav>
 
           <header className="folder-hero">
-            <span className="folder-hero-emoji">✍️</span>
+            <span className="folder-hero-emoji">
+              {route.view === 'velog-series' ? '📚' : '✍️'}
+            </span>
             <div className="folder-hero-body">
-              <h1 className="folder-hero-title">Velog</h1>
+              <h1 className="folder-hero-title">
+                {route.view === 'velog-series'
+                  ? velogSeriesItem?.name ?? '시리즈'
+                  : 'Velog'}
+              </h1>
               <p className="folder-hero-meta">
-                {velogPosts.length}개의 포스팅 ·{' '}
-                <a className="inline-link" href={VELOG} target="_blank" rel="noreferrer">
-                  velog.io 열기 ↗
-                </a>
+                {route.view === 'velog-series'
+                  ? `${velogSeriesItem?.posts.length ?? 0}개의 글 · ${VELOG_USER} Velog`
+                  : `${velogPosts.length}개의 포스팅 · `}
+                {route.view !== 'velog-series' && (
+                  <a className="inline-link" href={VELOG} target="_blank" rel="noreferrer">
+                    velog.io 열기 ↗
+                  </a>
+                )}
               </p>
             </div>
           </header>
@@ -804,25 +872,63 @@ export default function StudyPage() {
             <div className="study-error blog-error">⚠️ Velog 글을 불러오지 못했습니다.</div>
           )}
 
-          <section className="folder-section">
-            <h2 className="folder-section-title">📝 포스팅</h2>
-            <div className="blog-post-list">
-              {velogPosts.map((v, vi) => (
-                <Reveal key={v.urlSlug} delay={vi * 25}>
-                  <button className="study-card blog-post" onClick={() => openVelogPost(v.urlSlug)}>
-                    <span className="study-tile blog-post-emoji">✍️</span>
-                    <span className="blog-post-body">
-                      <span className="blog-post-title">{v.title}</span>
-                      <span className="blog-post-path">
-                        Velog · {v.tags.length ? v.tags.map((t) => `#${t}`).join(' ') : '포스팅'}
-                      </span>
-                    </span>
-                    <span className="blog-post-date">{dateText(v.releasedAt.slice(0, 10))}</span>
-                  </button>
-                </Reveal>
-              ))}
-            </div>
-          </section>
+          {route.view === 'velog' ? (
+            <>
+              {velogSeries.length > 0 && (
+                <section className="folder-section">
+                  <h2 className="folder-section-title">📚 시리즈</h2>
+                  <div className="folder-grid">
+                    {velogSeries.map((s, si) => (
+                      <Reveal key={s.id} delay={si * 40}>
+                        <button
+                          className="study-card folder-card"
+                          onClick={() => navigate(`/study/velog/series/${encodeURIComponent(s.id)}`)}
+                        >
+                          <span className="study-tile">📚</span>
+                          <span className="folder-card-body">
+                            <span className="folder-card-name">{s.name}</span>
+                            <span className="folder-card-sub">{s.posts.length}개의 글</span>
+                          </span>
+                          <span className="folder-card-arrow">→</span>
+                        </button>
+                      </Reveal>
+                    ))}
+                  </div>
+                </section>
+              )}
+              {velogUngrouped.length > 0 && (
+                <section className="folder-section">
+                  <h2 className="folder-section-title">📄 기타 글</h2>
+                  <div className="blog-post-list">
+                    {velogUngrouped.map((v, vi) => (
+                      <VelogPostRow
+                        key={v.urlSlug}
+                        post={v}
+                        delay={vi * 25}
+                        onOpen={openVelogPost}
+                      />
+                    ))}
+                  </div>
+                </section>
+              )}
+            </>
+          ) : (
+            velogSeriesItem && (
+              <section className="folder-section">
+                <h2 className="folder-section-title">📝 시리즈 글</h2>
+                <div className="blog-post-list">
+                  {velogSeriesItem.posts.map((v, vi) => (
+                    <VelogPostRow
+                      key={v.urlSlug}
+                      post={v}
+                      delay={vi * 25}
+                      onOpen={openVelogPost}
+                    />
+                  ))}
+                </div>
+              </section>
+            )
+          )}
         </main>
       ) : route.view === 'folder' ? (
         <main className="blog-page folder-page">
@@ -1079,6 +1185,32 @@ function TILGrass({ posts }: { posts: Post[] }) {
         </div>
       </div>
     </section>
+  )
+}
+
+/* Velog list row shared by overview + series views */
+function VelogPostRow({
+  post,
+  delay,
+  onOpen,
+}: {
+  post: VelogPost
+  delay: number
+  onOpen: (slug: string) => void
+}) {
+  return (
+    <Reveal key={post.urlSlug} delay={delay}>
+      <button className="study-card blog-post" onClick={() => onOpen(post.urlSlug)}>
+        <span className="study-tile blog-post-emoji">✍️</span>
+        <span className="blog-post-body">
+          <span className="blog-post-title">{post.title}</span>
+          <span className="blog-post-path">
+            Velog · {post.tags.length ? post.tags.map((t) => `#${t}`).join(' ') : '포스팅'}
+          </span>
+        </span>
+        <span className="blog-post-date">{dateText(post.releasedAt.slice(0, 10))}</span>
+      </button>
+    </Reveal>
   )
 }
 
