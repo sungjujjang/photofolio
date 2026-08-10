@@ -227,6 +227,56 @@ const dateText = (date: string | null) => {
   return `${y}.${m}.${d}`
 }
 
+type GrassDay = { date: string; count: number }
+type GrassData = { weeks: GrassDay[][]; activeDays: number; streak: number }
+
+function buildGrassData(posts: Post[]): GrassData {
+  const counts = new Map<string, number>()
+  for (const p of posts) {
+    if (p.date) counts.set(p.date, (counts.get(p.date) ?? 0) + 1)
+  }
+
+  const now = new Date()
+  const end = new Date(now)
+  end.setHours(0, 0, 0, 0)
+  end.setDate(end.getDate() - ((end.getDay() + 1) % 7))
+  const start = new Date(end)
+  start.setDate(start.getDate() - 52 * 7)
+
+  const keyOf = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+
+  const weeks: GrassDay[][] = []
+  let activeDays = 0
+  for (let w = 0; w < 53; w++) {
+    const week: GrassDay[] = []
+    for (let dow = 0; dow < 7; dow++) {
+      const day = new Date(start)
+      day.setDate(start.getDate() + w * 7 + dow)
+      const key = keyOf(day)
+      const count = counts.get(key) ?? 0
+      if (count > 0) activeDays++
+      week.push({ date: key, count })
+    }
+    weeks.push(week)
+  }
+
+  let streak = 0
+  const cursor = new Date(now)
+  if (!counts.get(keyOf(cursor))) cursor.setDate(cursor.getDate() - 1)
+  while (counts.get(keyOf(cursor))) {
+    streak++
+    cursor.setDate(cursor.getDate() - 1)
+  }
+
+  return { weeks, activeDays, streak }
+}
+
+const grassLevel = (count: number) =>
+  count <= 0 ? 0 : count === 1 ? 1 : count <= 2 ? 2 : count <= 4 ? 3 : 4
+
+const monthLabel = (date: string) => `${Number(date.slice(5, 7))}월`
+
 export default function StudyPage() {
   const [tree, setTree] = useState<TreeNode[] | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -622,6 +672,8 @@ export default function StudyPage() {
 
           {tree && (
             <>
+              <TILGrass posts={posts} />
+
               <section className="folder-section">
                 <h2 className="folder-section-title">🗂️ 카테고리</h2>
                 <div className="blog-cat-grid">
@@ -672,6 +724,60 @@ export default function StudyPage() {
         </main>
       )}
     </div>
+  )
+}
+
+/* GitHub-style contribution graph */
+function TILGrass({ posts }: { posts: Post[] }) {
+  const { weeks, activeDays, streak } = useMemo(() => buildGrassData(posts), [posts])
+  return (
+    <section className="folder-section">
+      <h2 className="folder-section-title">🌱 TIL 잔디</h2>
+      <div className="tl-grass-card">
+        <div className="tl-grass-head">
+          <span className="tl-grass-stat">
+            <b>{activeDays}</b>
+            <span>일 동안 기록</span>
+          </span>
+          <span className="tl-grass-stat">
+            <b>{streak}</b>
+            <span>연속 TIL</span>
+          </span>
+          <span className="tl-grass-legend">
+            <span>적음</span>
+            {[0, 1, 2, 3, 4].map((l) => (
+              <i key={l} className={`tl-grass-cell tl-grass-${l}`} />
+            ))}
+            <span>많음</span>
+          </span>
+        </div>
+        <div className="tl-grass-scroll">
+          <div className="tl-grass-months">
+            {weeks.map((week, wi) => {
+              const first = week.find((d) => d.date.endsWith('-01'))
+              return (
+                <span key={wi} className="tl-grass-month">
+                  {first ? monthLabel(first.date) : ''}
+                </span>
+              )
+            })}
+          </div>
+          <div className="tl-grass-grid">
+            {weeks.map((week, wi) => (
+              <div key={wi} className="tl-grass-week">
+                {week.map((d) => (
+                  <div
+                    key={d.date}
+                    className={`tl-grass-cell tl-grass-${grassLevel(d.count)}`}
+                    title={d.count > 0 ? `${d.date} · TIL ${d.count}개` : d.date}
+                  />
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
   )
 }
 

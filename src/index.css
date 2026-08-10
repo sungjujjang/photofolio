@@ -1799,6 +1799,99 @@ button {
   font-weight: 600;
 }
 
+/* ---- TIL grass ---- */
+.tl-grass-card {
+  padding: 22px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 18px;
+}
+.tl-grass-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 22px;
+  margin-bottom: 18px;
+}
+.tl-grass-stat {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+}
+.tl-grass-stat b {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 1.25rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--grad-1), var(--grad-3));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.tl-grass-stat span {
+  color: var(--text-dim);
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+.tl-grass-legend {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-faint);
+  font-size: 0.74rem;
+  font-weight: 600;
+}
+.tl-grass-scroll {
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: thin;
+}
+.tl-grass-months {
+  display: flex;
+  gap: 3px;
+  height: 18px;
+}
+.tl-grass-month {
+  width: 12px;
+  font-size: 0.66rem;
+  font-weight: 700;
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+.tl-grass-grid {
+  display: flex;
+  gap: 3px;
+}
+.tl-grass-week {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.tl-grass-cell {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+.tl-grass-0 {
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+}
+.tl-grass-1 {
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
+}
+.tl-grass-2 {
+  background: color-mix(in srgb, var(--accent) 42%, transparent);
+}
+.tl-grass-3 {
+  background: color-mix(in srgb, var(--accent) 68%, transparent);
+}
+.tl-grass-4 {
+  background: linear-gradient(135deg, var(--accent), var(--grad-3));
+}
+.tl-grass-cell:hover {
+  outline: 1px solid var(--border-strong);
+}
+
 /* ---- category cards ---- */
 .blog-cat-grid,
 .folder-grid {
@@ -2440,5 +2533,12 @@ button {
   }
   .blog-post-date {
     display: none;
+  }
+  .tl-grass-cell {
+    width: 10px;
+    height: 10px;
+  }
+  .tl-grass-month {
+    width: 10px;
   }
 }
