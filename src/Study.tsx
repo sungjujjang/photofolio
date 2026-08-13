@@ -226,17 +226,20 @@ function renderMarkdown(md: string, fileDir: string): string {
 }
 
 /* fetch Velog posts via same-origin proxy (/velog-api -> v2.velog.io/graphql) */
-async function fetchVelogPosts(): Promise<VelogPost[]> {
+function readVelogCache(staleOk: boolean): VelogPost[] | null {
   try {
     const cached = localStorage.getItem(VELOG_CACHE_KEY)
-    if (cached) {
-      const { time, posts } = JSON.parse(cached) as { time: number; posts: VelogPost[] }
-      if (Date.now() - time < VELOG_CACHE_TTL && Array.isArray(posts)) return posts
-    }
+    if (!cached) return null
+    const { time, posts } = JSON.parse(cached) as { time: number; posts: VelogPost[] }
+    if (!Array.isArray(posts)) return null
+    if (Date.now() - time < VELOG_CACHE_TTL || (staleOk && posts.length)) return posts
   } catch {
     /* ignore */
   }
+  return null
+}
 
+async function requestVelogPosts(): Promise<VelogPost[]> {
   const res = await fetch(VELOG_API, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -275,14 +278,32 @@ async function fetchVelogPosts(): Promise<VelogPost[]> {
     }))
     .sort((a, b) => b.releasedAt.localeCompare(a.releasedAt))
   try {
-    localStorage.setItem('ksec-velog-posts-v2', JSON.stringify({ time: Date.now(), posts }))
+    localStorage.setItem(VELOG_CACHE_KEY, JSON.stringify({ time: Date.now(), posts }))
   } catch {
     /* ignore */
   }
   return posts
 }
 
-async function fetchVelogPostBody(slug: string): Promise<string> {
+async function fetchVelogPosts(): Promise<VelogPost[]> {
+  const fresh = readVelogCache(false)
+  if (fresh) return fresh
+  try {
+    return await requestVelogPosts()
+  } catch {
+    /* 1차 실패 시 잠시 후 1회 재시도 (프록시/velog 일시 장애 대비) */
+    await new Promise((r) => setTimeout(r, 800))
+    try {
+      return await requestVelogPosts()
+    } catch {
+      const stale = readVelogCache(true)
+      if (stale) return stale
+      throw new Error('velog posts unavailable')
+    }
+  }
+}
+
+async function requestVelogPostBody(slug: string): Promise<string> {
   const res = await fetch(VELOG_API, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -298,6 +319,15 @@ async function fetchVelogPostBody(slug: string): Promise<string> {
   const body = data.data?.post?.body
   if (!body) throw new Error('empty velog post')
   return renderMarkdown(body, '')
+}
+
+async function fetchVelogPostBody(slug: string): Promise<string> {
+  try {
+    return await requestVelogPostBody(slug)
+  } catch {
+    await new Promise((r) => setTimeout(r, 800))
+    return requestVelogPostBody(slug)
+  }
 }
 
 function parseRoute(): StudyRoute {
