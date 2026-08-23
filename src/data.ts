@@ -3,7 +3,8 @@ export const profile = {
   koreanName: '장성주',
   nickname: 'SungJu',
   roles: ['DevOps', 'Backend', 'Frontend', 'ML'],
-  intro: '인프라부터 서비스까지, 직접 만들고 배포하는 개발자입니다.',
+  intro:
+    '대덕소프트웨어마이스터고등학교에서 DevOps · Backend · Frontend · ML 전반을 공부하는 개발자입니다. Kubernetes 환경에서 인프라를 설계하고, 확장 가능한 서비스를 만드는 것을 좋아합니다. 항상 새로운 기술을 학습하고 실제 프로젝트에 적용하는 것을 즐깁니다.',
   email: '20261112@dsm.hs.kr',
   github: 'https://github.com/sungjujjang',
   blog: 'https://velog.io/@sungjujjang/posts',
@@ -178,70 +179,80 @@ export const timeline = [
   {
     date: '2021',
     title: '대구교육대학교 정보영재원 수료',
-    description: '컴퓨터과학의 첫걸음',
+    description:
+      '정보 분야에 첫발을 내디디며 컴퓨터과학의 기초와 문제 해결 능력을 기르기 시작했습니다.',
     tag: '교육',
     emoji: '🎓',
   },
   {
     date: '2022',
-    title: '정보영재원 심화과정 수료',
-    description: '알고리즘 · 자료구조 심화 학습',
+    title: '대구교육대학교 정보영재원 심화과정 수료',
+    description:
+      '심화과정에서 알고리즘과 자료구조의 깊은 개념을 학습하며 실력을 더욱 탄탄하게 다졌습니다.',
     tag: '교육',
     emoji: '🏅',
   },
   {
     date: '2023',
-    title: '정보동아리 SASAC 입단',
-    description: '동아리 활동 및 프로젝트 시작',
+    title: '대구영남중학교 정보동아리 SASAC 입단',
+    description:
+      '정보동아리 SASAC에 합류하여 동아리 활동과 프로젝트를 함께 시작했습니다.',
     tag: '활동',
     emoji: '🚀',
   },
   {
     date: '2023',
-    title: 'SW-AI융합 해커톤 참여',
-    description: 'AI 모델 설계 · 협업 개발',
+    title: 'SW-AI융합 학생동아리 AI모델 해커톤 참여',
+    description:
+      'AI 모델 해커톤에 참여하여 인공지능 모델 설계와 협업 개발을 경험했습니다.',
     tag: '대회',
     emoji: '🤖',
   },
   {
     date: '2024',
-    title: '메타버스 빅데이터 캠프',
-    description: '우수 보고서 선정',
+    title: '대구미래교육연구원 메타버스 빅데이터 캠프 참여',
+    description:
+      '메타버스와 함께하는 빅데이터 캠프에 참여해 "대구 자살률 조사"를 주제로 분석하여 우수 보고서로 선정되었습니다.',
     tag: '수상',
     emoji: '📊',
   },
   {
     date: '2025',
-    title: '대구창의융합교육원 해커톤 우승',
-    description: '문제 해결 프로젝트 개발',
+    title: '대구창의융합교육원 주관 해커톤 우승',
+    description:
+      '지역 교육청 주관 해커톤에 참가하여 문제 해결 프로젝트를 개발하고 우승을 차지했습니다.',
     tag: '수상',
     emoji: '🏆',
   },
   {
     date: '2025',
-    title: '달빛연합 SW융합 해커톤',
-    description: '최우수상 · 인기상 · 창의상 수상',
+    title: '달빛연합 SW융합 학생 해커톤 우승',
+    description:
+      '대구창의융합교육원 & 광주광역시교육청교육연구정보원이 주관한 달빛연합 SW융합 학생 해커톤에서 최우수상(1등), 인기상, 창의상을 모두 수상했습니다.',
     tag: '수상',
     emoji: '👑',
   },
   {
     date: '2026',
-    title: '대덕소프트웨어마이스터고 입학',
-    description: '전공동아리 XQUARE — DevOps · Backend · Frontend',
+    title: '대덕소프트웨어마이스터고등학교 입학 및 전공동아리 XQUARE 입단',
+    description:
+      '대덕소프트웨어마이스터고등학교에 입학하여 전공동아리 XQUARE에서 DevOps · Backend · Frontend 를 집중적으로 학습하고 있습니다.',
     tag: '학교',
     emoji: '💻',
   },
   {
     date: '2026',
-    title: '교내 해커톤 우수상',
-    description: '대덕소프트웨어마이스터고 주최',
+    title: '대덕소프트웨어마이스터고등학교 교내 해커톤 우수상',
+    description:
+      '대덕소프트웨어마이스터고등학교에서 주관한 교내 해커톤에서 우수상을 수상하였습니다.',
     tag: '학교',
     emoji: '👑',
   },
   {
     date: '2026',
     title: '카카오 AI 루키캠프 수료',
-    description: 'AI/ML 실무형 프로젝트 경험',
+    description:
+      '카카오에서 주최한 AI 루키캠프를 수료하며 실무에 가까운 AI/ML 학습과 프로젝트 경험을 쌓았습니다.',
     tag: '교육',
     emoji: '🤖',
   },

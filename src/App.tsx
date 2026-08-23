@@ -350,36 +350,38 @@ function About() {
       <div className="container">
         <Reveal>
           <div className="section-header">
-            <span className="section-tag">About</span>
+            <span className="section-tag">About ✨</span>
             <h2 className="section-title">
               About <span className="grad-text">Me</span>
             </h2>
+            <p className="section-sub">누구나 쓸 수 있는 기술을, 꾸준히 만들어가는 개발자</p>
           </div>
         </Reveal>
 
-        <div className="about-minimal">
-          <Reveal>
-            <h3 className="about-name-lg">
-              {profile.nickname} <span className="grad-text">{profile.koreanName}</span>
+        <div className="about-grid">
+          <Reveal className="about-text-card">
+            <h3 className="about-name">
+              👋 {profile.nickname} <span className="grad-text">{profile.koreanName}</span>
             </h3>
             <p className="about-intro">{profile.intro}</p>
-            <p className="about-school">🏫 대덕소프트웨어마이스터고등학교</p>
-            <div className="about-links">
-              <a href={profile.github} target="_blank" rel="noreferrer" className="inline-link">
-                GitHub
-              </a>
-              <span>·</span>
-              <a href={profile.blog} target="_blank" rel="noreferrer" className="inline-link">
-                Velog
-              </a>
-              <span>·</span>
-              <a href={profile.solvedac} target="_blank" rel="noreferrer" className="inline-link">
-                solved.ac
-              </a>
-            </div>
-          </Reveal>
-
-          <Reveal delay={150}>
+            <ul className="about-points">
+              <li>
+                <span className="point-icon">◈</span>
+                Kubernetes · Docker 기반 인프라 설계와 운영 경험
+              </li>
+              <li>
+                <span className="point-icon">◈</span>
+                Go · Python · Java · TypeScript 등 다중 언어 활용
+              </li>
+              <li>
+                <span className="point-icon">◈</span>
+                MLOps와 데이터 분석까지 확장하는 학습 범위
+              </li>
+              <li>
+                <span className="point-icon">◈</span>
+                혼자서 인프라부터 프론트엔드까지 Full Stack 구현
+              </li>
+            </ul>
             <div className="about-chips">
               {profile.achievements.map((a) => (
                 <span key={a} className="chip">
@@ -387,6 +389,43 @@ function About() {
                 </span>
               ))}
             </div>
+          </Reveal>
+
+          <Reveal delay={150} className="about-card">
+            <div className="about-card-head">
+              <span className="about-card-icon">{icons.blog}</span>
+              <h4>Quick Info</h4>
+            </div>
+            <dl className="about-list">
+              <div>
+                <dt>이름</dt>
+                <dd>🧑‍💻 {profile.koreanName} ({profile.nickname})</dd>
+              </div>
+              <div>
+                <dt>소속</dt>
+                <dd>🏫 대덕소프트웨어마이스터고등학교</dd>
+              </div>
+              <div>
+                <dt>관심 분야</dt>
+                <dd>{profile.roles.join(' · ')}</dd>
+              </div>
+              <div>
+                <dt>Velog</dt>
+                <dd>
+                  <a href={profile.blog} target="_blank" rel="noreferrer" className="inline-link">
+                    velog.io/@sungjujjang
+                  </a>
+                </dd>
+              </div>
+              <div>
+                <dt>PS</dt>
+                <dd>
+                  <a href={profile.solvedac} target="_blank" rel="noreferrer" className="inline-link">
+                    solved.ac
+                  </a>
+                </dd>
+              </div>
+            </dl>
           </Reveal>
         </div>
       </div>
@@ -425,6 +464,7 @@ function Skills() {
             <h2 className="section-title">
               Tech <span className="grad-text">Stack</span>
             </h2>
+            <p className="section-sub">인프라부터 프론트엔드까지 폭넓은 기술 스택</p>
           </div>
         </Reveal>
 
@@ -451,6 +491,37 @@ function Skills() {
             </Reveal>
           ))}
         </div>
+
+        <Reveal delay={200}>
+          <div className="skills-row">
+            <div className="skill-card skill-card-wide">
+              <div className="skill-card-head">
+                <span className="skill-dot" style={{ background: '#FBBF24' }} />
+                <h3>Languages</h3>
+              </div>
+              <div className="skill-pills">
+                {skills.languages.map((item, ii) => (
+                  <span key={item} className="skill-pill skill-pill-ghost" style={{ animationDelay: `${ii * 50}ms` }}>
+                    {item}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <div className="skill-card skill-card-wide">
+              <div className="skill-card-head">
+                <span className="skill-dot" style={{ background: '#A78BFA' }} />
+                <h3>Tools & Others</h3>
+              </div>
+              <div className="skill-pills">
+                {skills.etc.map((item, ii) => (
+                  <span key={item} className="skill-pill skill-pill-ghost" style={{ animationDelay: `${ii * 50}ms` }}>
+                    {item}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </Reveal>
       </div>
     </section>
   )
@@ -550,10 +621,11 @@ function Career() {
       <div className="container">
         <Reveal>
           <div className="section-header">
-            <span className="section-tag">Career</span>
+            <span className="section-tag">Career 🚀</span>
             <h2 className="section-title">
               연혁 · <span className="grad-text">History</span>
             </h2>
+            <p className="section-sub">꾸준히 성장해온 저의 여정</p>
           </div>
         </Reveal>
 
