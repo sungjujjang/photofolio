@@ -436,7 +436,7 @@ function buildYearGrass(year: number, counts: Map<string, number>): GrassYearDat
   return { weeks, activeDays }
 }
 
-function buildGrassData(posts: Post[]): GrassData {
+function buildGrassData(posts: { date?: string | null }[]): GrassData {
   const counts = new Map<string, number>()
   for (const p of posts) {
     if (p.date) counts.set(p.date, (counts.get(p.date) ?? 0) + 1)
@@ -1168,7 +1168,7 @@ export default function StudyPage() {
 
           {tree && (
             <>
-              <TILGrass posts={posts} />
+              <TILGrass posts={posts} velogPosts={velogPosts} />
 
               <section className="folder-section">
                 <h2 className="folder-section-title">🗂️ 카테고리</h2>
@@ -1226,8 +1226,15 @@ export default function StudyPage() {
 }
 
 /* GitHub-style contribution graph */
-function TILGrass({ posts }: { posts: Post[] }) {
-  const { years, perYear, streak } = useMemo(() => buildGrassData(posts), [posts])
+function TILGrass({ posts, velogPosts }: { posts: Post[]; velogPosts: VelogPost[] }) {
+  const { years, perYear, streak } = useMemo(() => {
+    const all: { date?: string | null }[] = posts
+    for (const v of velogPosts) {
+      const d = v.releasedAt?.slice(0, 10)
+      if (d) all.push({ date: d })
+    }
+    return buildGrassData(all)
+  }, [posts, velogPosts])
   const [year, setYear] = useState(years[0] ?? String(new Date().getFullYear()))
 
   useEffect(() => {
@@ -1247,7 +1254,7 @@ function TILGrass({ posts }: { posts: Post[] }) {
           </span>
           <span className="tl-grass-stat">
             <b>{streak}</b>
-            <span>연속 TIL</span>
+            <span>연속 기록</span>
           </span>
           <span className="tl-grass-legend">
             <span>적음</span>
@@ -1287,7 +1294,7 @@ function TILGrass({ posts }: { posts: Post[] }) {
                     <div
                       key={d.date}
                       className={`tl-grass-cell tl-grass-${grassLevel(d.count)}`}
-                      title={d.count > 0 ? `${d.date} · TIL ${d.count}개` : d.date}
+                      title={d.count > 0 ? `${d.date} · 기록 ${d.count}개` : d.date}
                     />
                   ))}
                 </div>
