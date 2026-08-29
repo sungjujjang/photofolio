@@ -38,6 +38,10 @@ marked.use({
     link(token) {
       const text = token.tokens.map((t) => t.raw).join('')
       const title = token.title ? ` title="${token.title}"` : ''
+      const youtubeId = extractYouTubeId(token.href)
+      if (youtubeId) {
+        return `<iframe class="study-video" src="https://www.youtube.com/embed/${youtubeId}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe>`
+      }
       return `<a href="${token.href}" target="_blank" rel="noopener noreferrer"${title}>${text}</a>`
     },
   },
@@ -218,14 +222,42 @@ async function fetchTree(): Promise<TreeNode[]> {
 }
 
 function renderMarkdown(md: string, fileDir: string): string {
+  /* !youtube[VIDEO_ID] 커스텀 문법 -> 표준 유튜브 링크로 변환 (link 렌더러가 임베드 처리) */
+  md = md.replace(/!youtube\[([\w-]{11})(?:\?[^\]]*)?\]/g, (_m, id) => `[▶ 유튜브 영상](https://youtu.be/${id})`)
   currentDir = fileDir
   const html = marked.parse(md) as string
   return DOMPurify.sanitize(html, {
-    ADD_ATTR: ['target', 'rel'],
+    ADD_ATTR: ['target', 'rel', 'frameborder', 'allowfullscreen', 'allow'],
+    ADD_TAGS: ['iframe'],
   })
 }
 
 /* fetch Velog posts via same-origin proxy (/velog-api -> v2.velog.io/graphql) */
+function extractYouTubeId(url: string): string | null {
+  try {
+    const u = new URL(url)
+    const host = u.hostname.replace(/^www\./, '')
+    if (host === 'youtu.be') {
+      const id = u.pathname.replace(/^\//, '').split('/')[0]
+      return id && /^[\w-]{11}$/.test(id) ? id : null
+    }
+    if (host === 'youtube.com' || host === 'm.youtube.com' || host === 'youtube-nocookie.com') {
+      if (u.pathname === '/watch') {
+        const id = u.searchParams.get('v')
+        return id && /^[\w-]{11}$/.test(id) ? id : null
+      }
+      const seg = u.pathname.split('/').filter(Boolean)
+      if (seg[0] === 'embed' || seg[0] === 'shorts' || seg[0] === 'live') {
+        const id = seg[1]
+        return id && /^[\w-]{11}$/.test(id) ? id : null
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+  return null
+}
+
 function readVelogCache(staleOk: boolean): VelogPost[] | null {
   try {
     const cached = localStorage.getItem(VELOG_CACHE_KEY)
