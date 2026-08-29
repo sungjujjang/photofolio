@@ -10,7 +10,7 @@ const VELOG = 'https://velog.io/@sungjujjang/posts'
 const VELOG_USER = 'sungjujjang'
 const VELOG_API = '/velog-api'
 const VELOG_CACHE_KEY = 'ksec-velog-posts-v2'
-const VELOG_CACHE_TTL = 6 * 60 * 60 * 1000
+const VELOG_CACHE_TTL = 24 * 60 * 60 * 1000
 const TREE_URL = `https://api.github.com/repos/${REPO}/git/trees/${BRANCH}?recursive=1`
 const RAW_BASE = `https://raw.githubusercontent.com/${REPO}/${BRANCH}`
 const CACHE_KEY = 'ksec-study-tree'
