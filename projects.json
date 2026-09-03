@@ -1,0 +1,44 @@
+{
+  "projects": [
+    {
+      "name": "TeroMox",
+      "emoji": "⚡",
+      "description": "On-Premise 서버에서 돌아가는 EC2 대여 서비스",
+      "tags": ["React", "TypeScript", "Vite", "Spring", "FastAPI", "Proxmox"],
+      "github": "https://github.com/TeroMox",
+      "highlight": true
+    },
+    {
+      "name": "DHC",
+      "emoji": "🏫",
+      "description": "대마고 기숙사 청소 관리 시스템",
+      "tags": ["React", "TypeScript", "TurboRepo", "Vite", "Spring", "RabbitMQ"],
+      "github": "https://github.com/12th-DHC",
+      "highlight": true
+    },
+    {
+      "name": "Dexam",
+      "emoji": "📅",
+      "description": "학교 일정 관리 및 반별 공유 시스템",
+      "tags": ["React", "Vite", "Spring"],
+      "github": "https://github.com/12th-DHC",
+      "highlight": true
+    },
+    {
+      "name": "HomeServer Infra",
+      "emoji": "🌐",
+      "description": "ArgoCD ApplicationSet을 활용한 GitOps 레포지토리",
+      "tags": ["ArgoCD"],
+      "github": "https://github.com/sungjujjang/sungju-infra-applications",
+      "highlight": true
+    },
+    {
+      "name": "CarIn",
+      "emoji": "🚗",
+      "description": "택시 카풀 모집을 위한 서비스",
+      "tags": ["Django", "Sqlite"],
+      "github": "https://github.com/sungjujjang/Carin",
+      "highlight": true
+    }
+  ]
+}

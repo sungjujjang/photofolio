@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+﻿import { useEffect, useMemo, useRef, useState } from 'react'
 import { marked } from 'marked'
 import DOMPurify from 'dompurify'
+import hljs from 'highlight.js'
 import { PerformanceToggle, ThemeToggle } from './theme'
 import { navigate } from './router'
 
@@ -614,6 +615,58 @@ export default function StudyPage() {
     }
   }, [route])
 
+  useEffect(() => {
+    if ((route.view !== 'post' && route.view !== 'velog-post') || !content) return
+
+    const root = document.querySelector<HTMLElement>('.md-body')
+    if (!root) return
+
+    root.querySelectorAll('pre code').forEach((code) => {
+      hljs.highlightElement(code as HTMLElement)
+    })
+
+    root.querySelectorAll('pre').forEach((pre) => {
+      if (pre.querySelector('.code-header')) return
+      const code = pre.querySelector('code')
+      const lang = (code?.className.match(/language-(\w+)/)?.[1] ?? '').toUpperCase()
+
+      const header = document.createElement('div')
+      header.className = 'code-header'
+      if (lang) {
+        const langSpan = document.createElement('span')
+        langSpan.className = 'code-lang'
+        langSpan.textContent = lang
+        header.appendChild(langSpan)
+      }
+
+      const button = document.createElement('button')
+      button.type = 'button'
+      button.className = 'code-copy-btn'
+      button.textContent = 'Copy'
+      button.addEventListener('click', async () => {
+        const text = code?.textContent ?? pre.textContent ?? ''
+        try {
+          await navigator.clipboard.writeText(text.replace(/Copy$/, '').trimEnd())
+          button.textContent = 'Copied'
+          window.setTimeout(() => { button.textContent = 'Copy' }, 1400)
+        } catch {
+          button.textContent = 'Failed'
+          window.setTimeout(() => { button.textContent = 'Copy' }, 1400)
+        }
+      })
+      header.appendChild(button)
+      pre.insertBefore(header, pre.firstChild)
+    })
+
+    root.querySelectorAll('table').forEach((table) => {
+      if (table.parentElement?.classList.contains('md-table-wrap')) return
+      const wrapper = document.createElement('div')
+      wrapper.className = 'md-table-wrap'
+      table.parentNode?.insertBefore(wrapper, table)
+      wrapper.appendChild(table)
+    })
+  }, [content, route])
+
   const openFolder = (path: string) => navigate(`/study/${encodeURI(path)}`)
   const openPost = (path: string) => navigate(`/study/${encodeURI(path)}`)
   const openVelogPost = (slug: string) => navigate(`/study/velog/${encodeURIComponent(slug)}`)
@@ -776,7 +829,7 @@ export default function StudyPage() {
           </button>
           <span className="study-topbar-divider" />
           <button className="study-topbar-brand" onClick={goHome}>
-            <span className="study-topbar-title">📚 Study TIL</span>
+            <span className="study-topbar-title">Study TIL</span>
             <span className="study-topbar-sub">TIL · {REPO}</span>
           </button>
         </div>
@@ -811,7 +864,12 @@ export default function StudyPage() {
             target="_blank"
             rel="noreferrer"
           >
-            ✍️ <span>Velog</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="1em" height="1em">
+              <path d="M14 3v4a1 1 0 0 0 1 1h4" />
+              <path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z" />
+              <path d="M9 13h6M9 17h4" />
+            </svg>
+            <span>Velog</span>
           </a>
           <a className="study-about-btn" href="https://dev.sungju.xyz/" target="_blank" rel="noreferrer">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="1em" height="1em">
@@ -831,7 +889,7 @@ export default function StudyPage() {
           className={`study-cat-chip ${route.view === 'home' ? 'study-cat-chip-active' : ''}`}
           onClick={goHome}
         >
-          🏠 전체
+          전체
         </button>
         {categories.map((cat) => (
           <button
@@ -839,7 +897,7 @@ export default function StudyPage() {
             className={`study-cat-chip ${isActiveCat(cat) ? 'study-cat-chip-active' : ''}`}
             onClick={() => (cat.path === '__root__' ? openFolder('__root__') : openFolder(cat.path))}
           >
-            <span>{cat.emoji}</span> {cat.name}
+            {cat.name}
             <b>{cat.postCount}</b>
           </button>
         ))}
@@ -988,7 +1046,7 @@ export default function StudyPage() {
             <>
               {velogSeries.length > 0 && (
                 <section className="folder-section">
-                  <h2 className="folder-section-title">📚 시리즈</h2>
+                  <h2 className="folder-section-title">시리즈</h2>
                   <div className="folder-grid">
                     {velogSeries.map((s, si) => (
                       <Reveal key={s.id} delay={si * 40}>
@@ -1010,7 +1068,7 @@ export default function StudyPage() {
               )}
               {velogUngrouped.length > 0 && (
                 <section className="folder-section">
-                  <h2 className="folder-section-title">📄 기타 글</h2>
+                  <h2 className="folder-section-title">기타 글</h2>
                   <div className="blog-post-list">
                     {velogUngrouped.map((v, vi) => (
                       <VelogPostRow
@@ -1027,7 +1085,7 @@ export default function StudyPage() {
           ) : (
             velogSeriesItem && (
               <section className="folder-section">
-                <h2 className="folder-section-title">📝 시리즈 글</h2>
+                <h2 className="folder-section-title">시리즈 글</h2>
                 <div className="blog-post-list">
                   {velogSeriesItem.posts.map((v, vi) => (
                     <VelogPostRow
@@ -1088,7 +1146,7 @@ export default function StudyPage() {
 
               {subFolders.length > 0 && (
                 <section className="folder-section">
-                  <h2 className="folder-section-title">📂 하위 폴더</h2>
+                  <h2 className="folder-section-title">하위 폴더</h2>
                   <div className="folder-grid">
                     {subFolders.map((sub, si) => (
                       <Reveal key={sub.path} delay={si * 40}>
@@ -1108,7 +1166,7 @@ export default function StudyPage() {
 
               {folderFiles.length > 0 && (
                 <section className="folder-section">
-                  <h2 className="folder-section-title">📝 글 목록</h2>
+                  <h2 className="folder-section-title">글 목록</h2>
                   <div className="blog-post-list">
                     {folderFiles.map((post, pi) => (
                       <Reveal key={post.path} delay={pi * 25}>
@@ -1135,13 +1193,9 @@ export default function StudyPage() {
       ) : (
         <main className="blog-page">
           <div className="blog-hero">
-            <span className="blog-hero-kicker">// {REPO}</span>
             <h1 className="blog-hero-title">
               Study <span className="blog-hero-grad">TIL</span>
             </h1>
-            <p className="blog-hero-desc">
-              하나씩 쌓은 학습 기록을 폴더 구조로 정리한 개발 블로그예요.
-            </p>
             <div className="blog-hero-stats">
               <span className="blog-hero-stat">
                 <b>{tree ? posts.length : '–'}</b>
@@ -1171,7 +1225,7 @@ export default function StudyPage() {
               <TILGrass posts={posts} velogPosts={velogPosts} />
 
               <section className="folder-section">
-                <h2 className="folder-section-title">🗂️ 카테고리</h2>
+                <h2 className="folder-section-title">카테고리</h2>
                 <div className="blog-cat-grid">
                   {categories.map((cat, ci) => (
                     <Reveal key={cat.path} delay={ci * 50}>
@@ -1201,7 +1255,7 @@ export default function StudyPage() {
               </section>
 
               <section className="folder-section">
-                <h2 className="folder-section-title">✨ 최근 글</h2>
+                <h2 className="folder-section-title">최근 글</h2>
                 <div className="blog-post-list">
                   {recentPosts.map((post, pi) => (
                     <Reveal key={post.key} delay={pi * 25}>
@@ -1245,7 +1299,7 @@ function TILGrass({ posts, velogPosts }: { posts: Post[]; velogPosts: VelogPost[
 
   return (
     <section className="folder-section">
-      <h2 className="folder-section-title">🌱 TIL 잔디</h2>
+      <h2 className="folder-section-title">TIL 잔디</h2>
       <div className="tl-grass-card">
         <div className="tl-grass-head">
           <span className="tl-grass-stat">
