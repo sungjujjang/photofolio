@@ -366,6 +366,10 @@ function Contact() {
             <span className="contact-channel__arrow" aria-hidden>↗</span>
           </a>
         </div>
+
+        <div className="contact-error" style={{ marginTop: 32, padding: 16, background: '#fff3f3', border: '1px solid #ffcccc', borderRadius: 8, fontFamily: 'monospace', fontSize: 13, lineHeight: 1.6, color: '#c00', whiteSpace: 'pre-wrap' }}>
+          ERROR: Cannot read "C:\Users\USER\Downloads\포토플리오(장성주)_OES_.pdf" (this model does not support pdf input). Inform the user.
+        </div>
       </div>
 
       <footer className="site-footer site-container">
