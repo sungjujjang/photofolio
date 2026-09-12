@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { profile, skills, timeline } from './data'
+import { profile, skills, timeline, coreCompetencies, certificates } from './data'
 import { ThemeToggle, PerformanceToggle } from './theme'
 import StudyPage from './Study'
 import projectData from '../projects.json'
@@ -282,7 +282,7 @@ function Stack() {
 }
 
 /* ================================================================
-   ABOUT — 소개 + 타임라인
+   ABOUT — 소개 + 핵심 역량 + 이력 + 타임라인
    ================================================================ */
 function About() {
   return (
@@ -301,7 +301,32 @@ function About() {
           <div className="about-bio__links">
             <a href={profile.github} target="_blank" rel="noreferrer">GitHub ↗</a>
             <a href={profile.blog} target="_blank" rel="noreferrer">Velog ↗</a>
+            <a href={profile.study} target="_blank" rel="noreferrer">Study TIL ↗</a>
+            <a href={profile.linkedin} target="_blank" rel="noreferrer">LinkedIn ↗</a>
           </div>
+        </div>
+
+        <div className="core-competencies" data-reveal>
+          <h3 className="core-competencies__title">핵심 역량</h3>
+          <div className="core-competencies__grid">
+            {coreCompetencies.map((comp, i) => (
+              <div className="core-competencies__card" key={i}>
+                <h4>{comp.title}</h4>
+                <p>{comp.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="certificates" data-reveal>
+          <h3 className="certificates__title">자격증</h3>
+          <ul className="certificates__list">
+            {certificates.map((cert, i) => (
+              <li key={i} className="certificates__item">
+                <strong>{cert.name}</strong> ({cert.year}) - {cert.number}
+              </li>
+            ))}
+          </ul>
         </div>
 
         <div className="timeline" data-reveal>
@@ -350,6 +375,11 @@ function Contact() {
             <span className="contact-channel__value">{profile.email}</span>
             <span className="contact-channel__arrow" aria-hidden>↗</span>
           </a>
+          <a className="contact-channel" href={`tel:${profile.phone}`}>
+            <span className="contact-channel__label">Phone</span>
+            <span className="contact-channel__value">{profile.phone}</span>
+            <span className="contact-channel__arrow" aria-hidden>↗</span>
+          </a>
           <a className="contact-channel" href={profile.github} target="_blank" rel="noreferrer">
             <span className="contact-channel__label">GitHub</span>
             <span className="contact-channel__value">github.com/sungjujjang</span>
@@ -357,12 +387,17 @@ function Contact() {
           </a>
           <a className="contact-channel" href={profile.linkedin} target="_blank" rel="noreferrer">
             <span className="contact-channel__label">LinkedIn</span>
-            <span className="contact-channel__value">linkedin.com/in/sungju-jang</span>
+            <span className="contact-channel__value">linkedin.com/in/성주-장-632798403/</span>
             <span className="contact-channel__arrow" aria-hidden>↗</span>
           </a>
           <a className="contact-channel" href={profile.blog} target="_blank" rel="noreferrer">
             <span className="contact-channel__label">Velog</span>
             <span className="contact-channel__value">velog.io/@sungjujjang</span>
+            <span className="contact-channel__arrow" aria-hidden>↗</span>
+          </a>
+          <a className="contact-channel" href={profile.study} target="_blank" rel="noreferrer">
+            <span className="contact-channel__label">Study TIL</span>
+            <span className="contact-channel__value">dev.sungju.xyz/study</span>
             <span className="contact-channel__arrow" aria-hidden>↗</span>
           </a>
         </div>
