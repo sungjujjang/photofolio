@@ -129,6 +129,43 @@ export const projects = [
     tags: ['React', 'TypeScript', 'TurboRepo', 'Vite', 'Spring', 'RabbitMQ'],
     github: 'https://github.com/12th-DHC',
     highlight: true,
+    detail: {
+      period: '2025.08 ~ 2025.12',
+      team: '4인 (PM 겸 백엔드)',
+      stack: 'React / TypeScript / TurboRepo / Vite / Spring / RabbitMQ',
+      background:
+        '기숙사 생활을 하는 학생들의 청소 당번 관리가 수기로 이루어져 누락·중복·불공정 문제가 빈번했습니다. 학생들이 직접 확인하고 관리할 수 있는 투명한 시스템이 필요했습니다.',
+      features: [
+        '청소 구역·당번 자동 배정 및 알림 발송 기능',
+        '청소 완료 인증 사진 업로드 및 검수 기능',
+        '벌점·보상 포인트 시스템으로 공정성 확보',
+        '관리자 대시보드: 미수행자 조회, 통계, 공지사항 관리',
+        'RabbitMQ 기반 비동기 알림(이메일·푸시) 처리',
+      ],
+      coreImplementation: [
+        'TurboRepo 모노레포로 프론트(React)·백엔드(Spring)·공통 타입·유틸리티 통합 관리',
+        'Spring Boot + JPA로 도메인 모델 설계(학생, 구역, 일정, 벌점, 알림)',
+        'RabbitMQ를 이용해 청소 마감 임박·미수행·인증 요청 등 이벤트 비동기 처리',
+        'React + Vite SPA에서 실시간 알림(SSE) 및 반응형 UI 구현',
+        'JWT 기반 인증·인가, 역할별 메뉴 권한 분리(학생/관리자)',
+      ],
+      issues: [
+        {
+          title: '청소 인증 사진 업로드 시 대용량 파일로 인한 서버 부하',
+          solution:
+            '클라이언트에서 이미지 리사이즈·압축 후 업로드하도록 처리하고, 서버에서는 Multipart 업로드 시 스트리밍 방식으로 저장하여 메모리 점유를 최소화했습니다. 또한 S3 호환 스토리지(MinIO)를 도입해 정적 파일을 분리 저장했습니다.',
+        },
+        {
+          title: '동시 알림 발송 시 RabbitMQ 큐 적체',
+          solution:
+            '알림 타입별로 Exchange·Queue를 분리하고, 긴급 알림(마감 임박)은 우선순위 큐로, 일반 알림은 일반 큐로 라우팅했습니다. Consumer 스케일아웃과 Prefetch 조정으로 처리량을 확보했습니다.',
+        },
+      ],
+      retrospective:
+        '모노레포(TurboRepo) 구조로 프론트·백엔드·공통 코드를 하나의 저장소에서 관리하며 빌드·배포 파이프라인을 단순화할 수 있었습니다. RabbitMQ를 처음 도입해보며 이벤트 주도 아키텍처의 장점(결합도 낮춤, 확장성)과 운영 복잡도(큐 모니터링, 데드레터 처리) 모두를 체감했습니다. PM으로서 일정 조율·코드 리뷰·이슈 트래킹을 병행하며 기술적 의사결정과 팀 운영의 균형을 배웠습니다.',
+      future:
+        '학생회·교사용 별도 관리 포털 분리, 청소 구역 자동 최적화 알고리즘 도입, 타 기숙사로 확장 가능한 멀티 테넌트 구조로 발전시킬 계획입니다.',
+    },
   },
   {
     name: 'Dexam',
@@ -137,6 +174,43 @@ export const projects = [
     tags: ['React', 'Vite', 'Spring'],
     github: 'https://github.com/12th-DHC',
     highlight: true,
+    detail: {
+      period: '2025.03 ~ 2025.07',
+      team: '3인 (풀스택)',
+      stack: 'React / Vite / Spring / MySQL',
+      background:
+        '학교·학급·동아리별 일정이 흩어져 있어 학생들이 본인 관련 일정을 한눈에 보기 어려웠습니다. 구글 캘린더 연동 없이도 교내 일정을 통합 관리·공유할 수 있는 경량 시스템이 필요했습니다.',
+      features: [
+        '학교·학년·반·동아리별 계층형 일정 등록·조회',
+        '반별 공유 캘린더(읽기/쓰기 권한 분리)',
+        '일정 알림(당일/전일) 브라우저 푸시 알림',
+        'ICS(캘린더) 내보내기 기능으로 외부 캘린더 연동',
+        '관리자: 전체 일정 일괄 등록·수정·삭제',
+      ],
+      coreImplementation: [
+        'Spring Boot + JPA로 계층형 일정 도메인(학교>학년>반>동아리) 설계',
+        'React + Vite에서 FullCalendar 라이브러리 커스터마이징하여 월/주/일 뷰 제공',
+        'Web Push API(VAPID)로 서비스 워커 기반 푸시 알림 구현',
+        'ICS(RFC 5545) 포맷 생성기로 Google/Outlook 캘린더 호환 내보내기',
+        '권한 기반 API: 학교 관리자 > 학년 관리자 > 반장 > 일반 학생',
+      ],
+      issues: [
+        {
+          title: '반복 일정(주간/월간) 생성 시 예외 날짜(공휴일·시험기간) 처리',
+          solution:
+            'RRULE 표준을 따르되 예외 날짜(EXDATE)를 별도 테이블로 관리하도록 설계했습니다. 프론트에서 반복 규칙 작성 시 예외 날짜를 다중 선택할 수 있는 UI를 제공하고, 백엔드에서 발생 인스턴스 생성 시 EXDATE를 제외하도록 필터링 로직을 추가했습니다.',
+        },
+        {
+          title: '푸시 알림 구독 권한 거부 시 사용자 경험 저하',
+          solution:
+            '알림 권한 요청을 컨텍스트에 맞게(일정 등록 직후) 띄우고, 거부 시에도 앱 내 알림센터(인앱 알림)로 폴백하여 중요 정보를 놓치지 않도록 했습니다. 서비스 워커 수명 주기 관리 로직을 강화해 브라우저 재시작 후에도 구독이 유지되도록 했습니다.',
+        },
+      ],
+      retrospective:
+        '캘린더 도메인의 복잡도(반복, 예외, 권한, 타임존)를 직접 다루며 도메인 모델링의 중요성을 실감했습니다. 풀캘린더 커스터마이징 과정에서 날짜·시간대 처리의 미묘한 버그들을 경험하고, 테스트 코드로 검증하는 습관을 들였습니다. 3인 소규모 팀에서 풀스택을 오가며 개발 속도와 코드 품질 사이의 균형을 맞추는 연습이 되었습니다.',
+      future:
+        '교내 공식 시스템으로 채택되도록 보안 감사·접근성 검토를 진행하고, 교사용 출결 연동·학부모 알림 채널 확장을 고려 중입니다.',
+    },
   },
   {
     name: 'HomeServer Infra',
@@ -145,6 +219,43 @@ export const projects = [
     tags: ['ArgoCD'],
     github: 'https://github.com/sungjujjang/sungju-infra-applications',
     highlight: true,
+    detail: {
+      period: '2025.11 ~ 현재',
+      team: '1인 (개인 인프라 프로젝트)',
+      stack: 'ArgoCD / Helm / Kubernetes / GitOps',
+      background:
+        '홈랩 환경에서 수동으로 매니페스트를 적용하다 보니 구성 드리프트, 롤백 어려움, 변경 이력 부재 문제가 발생했습니다. GitOps 원칙(단일 소스, 선언적, 자동 동기화)을 적용해 인프라를 코드로 관리하고자 했습니다.',
+      features: [
+        'ArgoCD ApplicationSet으로 다중 클러스터·다중 애플리케이션 선언적 관리',
+        'Helm 차트 템플릿화로 공통 설정(리소스 제한, 프라비전, 인그레스) 재사용',
+        'Kustomize 오버레이로 환경별(dev/staging/prod) 차이 흡수',
+        'Renovate 봇으로 컨테이너 이미지·Helm 차트 버전 자동 업데이트 PR 생성',
+        'ArgoCD 알림(Slack·Webhook)으로 동기화 상태·실패 실시간 감지',
+      ],
+      coreImplementation: [
+        'ApplicationSet Generator(Cluster·Git·Matrix)로 신규 서비스 추가 시 매니페스트 1개만 추가하면 자동 등록',
+        'Helm values.yaml 계층화: 공통 values → 서비스별 values → 환경별 values 오버라이드',
+        'ArgoCD Project·RBAC로 네임스페이스·리소스 권한 격리',
+        'Sync Wave·Hook(PreSync/PostSync)로 DB 마이그레이션·캐시 워밍 등 순서 제어',
+        'Sealed Secrets / External Secrets Operator로 시크릿 Git 저장 안전화',
+      ],
+      issues: [
+        {
+          title: 'ArgoCD ApplicationSet 매트릭스 생성 시 네임스페이스 충돌',
+          solution:
+            'Generator 매트릭스에서 네임스페이스를 동적으로 생성하되, 클러스터별 네임스페이스 프리픽스를 부여해 충돌을 방지했습니다. 또한 ArgoCD Project 단위로 네임스페이스 생성 권한을 제한하여 무분별한 생성을 차단했습니다.',
+        },
+        {
+          title: 'Helm 차트 업데이트 시 크로스 네임스페이스 리소스(CRD, ClusterRole) 적용 실패',
+          solution:
+            '클러스터 스코프 리소스는 별도 Helm 차트(인프라 차트)로 분리하고, ArgoCD Sync Wave를 이용해 애플리케이션 차트보다 먼저 적용되도록 순서를 제어했습니다. CRD는 설치 후 삭제되지 않도록 `helm.sh/resource-policy: keep` 어노테이션을 추가했습니다.',
+        },
+      ],
+      retrospective:
+        'GitOps로 전환한 후 배포 리드타임이 수 분에서 수 초로 단축되었고, 모든 변경이 Git 히스토리에 남아 감사 추적이 가능해졌습니다. ArgoCD의 선언적 모델이 주는 안정감과, 헬름·커스텀아이즈 조합으로 중복을 제거하는 설계 패턴을 익혔습니다. 단, ArgoCD 자체 업그레이드·CRD 마이그레이션 등 컨트롤 플레인 운영 부담도 있음을 인지했습니다.',
+      future:
+        '멀티 클러스터(클라우드+온프레미스) 통합 관리, Policy-as-Code(Kyverno/OPA) 도입으로 보안·컴플라이언스 자동 검증, 카나리·블루그린 배포 파이프라인 내재화를 목표로 합니다.',
+    },
   },
   {
     name: 'CarIn',
@@ -153,6 +264,43 @@ export const projects = [
     tags: ['Django', 'Sqlite'],
     github: 'https://github.com/sungjujjang/Carin',
     highlight: true,
+    detail: {
+      period: '2024.06 ~ 2024.08',
+      team: '2인 (백엔드 리드)',
+      stack: 'Django / SQLite / Django REST Framework / Vanilla JS',
+      background:
+        '심야·새벽 시간대 택시 잡기가 어렵고, 동승 의사가 있는 승객끼리 매칭되면 요금 분담과 배차 효율을 모두 높일 수 있습니다. 간단한 웹 기반 카풀 매칭 서비스를 프로토타입으로 제작했습니다.',
+      features: [
+        '출발지·도착지·희망 시간 입력으로 카풀 모집 글 작성',
+        '경로 유사도(구간 겹침 비율) 기반 자동 매칭 추천',
+        '실시간 채팅(웹소켓)로 탑승 조율',
+        '매칭 완료 시 예상 요금 분담 계산 및 정산 가이드',
+        '관리자: 부적절 게시물 신고·차단, 통계 대시보드',
+      ],
+      coreImplementation: [
+        'Django + DRF로 REST API 설계(게시글, 매칭, 채팅, 사용자)',
+        'SQLite + 공간 인덱스(PostGIS 미사용 시 위도/경도 기반 단순 거리 계산)로 경로 유사도 산출',
+        'Django Channels + Redis로 웹소켓 실시간 채팅 구현',
+        'JWT 인증 + 소셜 로그인(카카오/구글) 연동',
+        '배포: Nginx + Gunicorn + systemd, SQLite는 백업 스크립트로 주기적 덤프',
+      ],
+      issues: [
+        {
+          title: '경로 유사도 알고리즘이 단순 거리 기반이라 실제 도로망과 괴리',
+          solution:
+            'OSRM(Open Source Routing Machine) 데모 서버를 활용해 실제 주행 거리·시간을 API로 조회하고, 구간 겹침 비율을 실경로 기준으로 재계산하도록 개선했습니다. 외부 API 호출 캐싱(TTL 1시간)으로 응답 속도와 쿼터를 관리했습니다.',
+        },
+        {
+          title: '웹소켓 연결 불안정(모바일 네트워크 전환 시 끊김)',
+          solution:
+            '재연결 로직(지수 백오프 + 최대 5회)을 클라이언트에 추가하고, 서버 측에서 메시지 영속성(Redis Stream)을 두어 재연결 시 미수신 메시지를 동기화하도록 했습니다. 하트비트(핑/퐁)로 유휴 연결 정리도 병행했습니다.',
+        },
+      ],
+      retrospective:
+        '첫 Django 프로젝트로 ORM·마이그레이션·어드민·인증 등 프레임워크가 주는 생산성을 체감했습니다. 단, SQLite는 동시 쓰기 처리 한계가 있어 실서비스 전환 시 PostgreSQL 마이그레이션이 필수적임을 배웠습니다. 2인 팀에서 백엔드 전담하며 API 설계·테스트·배포 자동화까지 전주기를 경험했습니다.',
+      future:
+        'PostgreSQL + PostGIS 마이그레이션으로 정확한 경로 매칭 구현, 네이티브 앱(React Native/Flutter) 전환, 결제·정산 모듈 연동으로 실사업화 검토 중입니다.',
+    },
   },
 ]
 

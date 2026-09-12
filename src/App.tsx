@@ -18,6 +18,17 @@ type Project = {
   tags: string[]
   github: string
   highlight?: boolean
+  detail?: {
+    period: string
+    team: string
+    stack: string
+    background: string
+    features: string[]
+    coreImplementation: string[]
+    issues: { title: string; solution: string }[]
+    retrospective: string
+    future: string
+  }
 }
 
 const PROJECTS: Project[] = (projectData as { projects: Project[] }).projects ?? []
@@ -189,49 +200,168 @@ function Hero() {
    WORK — 프로젝트
    ================================================================ */
 function Work() {
+  const [selectedProject, setSelectedProject] = useState<typeof PROJECTS[0] | null>(null)
+
+  const openDetail = (p: typeof PROJECTS[0]) => {
+    setSelectedProject(p)
+    document.body.style.overflow = 'hidden'
+  }
+
+  const closeDetail = () => {
+    setSelectedProject(null)
+    document.body.style.overflow = ''
+  }
+
   return (
-    <section className="page-section page-section--tint" id="work">
-      <div className="site-container section-spacing">
-        <header className="section-header">
-          <div className="section-header__body">
-            <h2 className="section-header__title">
-              <span className="section-header__title-line">프로젝트</span>
-            </h2>
-            <p className="section-header__description">
-              직접 설계하고 만든 프로젝트입니다.
-            </p>
+    <>
+      <section className="page-section page-section--tint" id="work">
+        <div className="site-container section-spacing">
+          <header className="section-header">
+            <div className="section-header__body">
+              <h2 className="section-header__title">
+                <span className="section-header__title-line">프로젝트</span>
+              </h2>
+              <p className="section-header__description">
+                직접 설계하고 만든 프로젝트입니다. 카드를 눌러 상세 내용을 확인하세요.
+              </p>
+            </div>
+          </header>
+
+          {PROJECTS.length === 0 ? (
+            <div className="work-empty">
+              <p>등록된 프로젝트가 없습니다.</p>
+              <p className="work-empty__hint">루트의 projects.json 에 프로젝트를 추가해 주세요.</p>
+            </div>
+          ) : (
+            <ul className="work-grid" data-reveal>
+              {PROJECTS.map((p) => (
+                <li
+                  className="work-card"
+                  key={p.name}
+                  data-reveal
+                  onClick={() => openDetail(p)}
+                  style={{ cursor: 'pointer' }}
+                  tabIndex={0}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDetail(p) } }}
+                  role="button"
+                  aria-label={`${p.name} 상세 보기`}
+                >
+                  <a className="work-card__link" href={p.github} target="_blank" rel="noopener" aria-label={`${p.name} GitHub (새 탭)`} onClick={(e) => e.stopPropagation()} />
+                  <div className="work-card__top">
+                    <span className="work-card__emoji" aria-hidden>{p.emoji}</span>
+                    <span className="work-card__arrow" aria-hidden>↗</span>
+                  </div>
+                  <h3 className="work-card__name">{p.name}</h3>
+                  <p className="work-card__desc">{p.description}</p>
+                  {p.tags.length > 0 && (
+                    <div className="work-card__tags">
+                      {p.tags.map((t) => (
+                        <span className="detail-tag" key={t}>{t}</span>
+                      ))}
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </section>
+
+      {selectedProject && selectedProject.detail && (
+        <ProjectDetailModal project={selectedProject} onClose={closeDetail} />
+      )}
+    </>
+  )
+}
+
+/* ================================================================
+   PROJECT DETAIL MODAL
+   ================================================================ */
+interface ProjectDetailModalProps {
+  project: typeof PROJECTS[0]
+  onClose: () => void
+}
+
+function ProjectDetailModal({ project, onClose }: ProjectDetailModalProps) {
+  const d = project.detail!
+  const handleOverlayClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) onClose()
+  }
+
+  return (
+    <div className="project-modal-overlay" onClick={handleOverlayClick} role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div className="project-modal" onClick={(e) => e.stopPropagation()}>
+        <button className="project-modal__close" onClick={onClose} aria-label="닫기">×</button>
+
+        <header className="project-modal__header">
+          <span className="project-modal__emoji" aria-hidden>{project.emoji}</span>
+          <div>
+            <h2 id="modal-title" className="project-modal__title">{project.name}</h2>
+            <p className="project-modal__desc">{project.description}</p>
           </div>
         </header>
 
-        {PROJECTS.length === 0 ? (
-          <div className="work-empty">
-            <p>등록된 프로젝트가 없습니다.</p>
-            <p className="work-empty__hint">루트의 projects.json 에 프로젝트를 추가해 주세요.</p>
+        <div className="project-modal__meta">
+          <div className="project-modal__meta-item">
+            <span className="project-modal__meta-label">기간</span>
+            <span className="project-modal__meta-value">{d.period}</span>
           </div>
-        ) : (
-          <ul className="work-grid" data-reveal>
-            {PROJECTS.map((p) => (
-              <li className="work-card" key={p.name} data-reveal>
-                <a className="work-card__link" href={p.github} target="_blank" rel="noopener" aria-label={`${p.name} (새 탭)`} />
-                <div className="work-card__top">
-                  <span className="work-card__emoji" aria-hidden>{p.emoji}</span>
-                  <span className="work-card__arrow" aria-hidden>↗</span>
-                </div>
-                <h3 className="work-card__name">{p.name}</h3>
-                <p className="work-card__desc">{p.description}</p>
-                {p.tags.length > 0 && (
-                  <div className="work-card__tags">
-                    {p.tags.map((t) => (
-                      <span className="detail-tag" key={t}>{t}</span>
-                    ))}
-                  </div>
-                )}
-              </li>
+          <div className="project-modal__meta-item">
+            <span className="project-modal__meta-label">인원</span>
+            <span className="project-modal__meta-value">{d.team}</span>
+          </div>
+          <div className="project-modal__meta-item">
+            <span className="project-modal__meta-label">스택</span>
+            <span className="project-modal__meta-value">{d.stack}</span>
+          </div>
+        </div>
+
+        <a href={project.github} target="_blank" rel="noopener" className="project-modal__github">
+          GitHub 저장소 보기 ↗
+        </a>
+
+        <div className="project-modal__content">
+          <section className="project-modal__section">
+            <h3>프로젝트 배경</h3>
+            <p>{d.background}</p>
+          </section>
+
+          <section className="project-modal__section">
+            <h3>주요 기능</h3>
+            <ul>
+              {d.features.map((f: string, i: number) => <li key={i}>{f}</li>)}
+            </ul>
+          </section>
+
+          <section className="project-modal__section">
+            <h3>핵심 구현</h3>
+            <ul>
+              {d.coreImplementation.map((c: string, i: number) => <li key={i}>{c}</li>)}
+            </ul>
+          </section>
+
+          <section className="project-modal__section">
+            <h3>이슈 및 해결</h3>
+            {d.issues.map((issue: { title: string; solution: string }, i: number) => (
+              <div key={i} className="project-modal__issue">
+                <h4>{issue.title}</h4>
+                <p>{issue.solution}</p>
+              </div>
             ))}
-          </ul>
-        )}
+          </section>
+
+          <section className="project-modal__section">
+            <h3>회고</h3>
+            <p>{d.retrospective}</p>
+          </section>
+
+          <section className="project-modal__section">
+            <h3>향후 발전 방향</h3>
+            <p>{d.future}</p>
+          </section>
+        </div>
       </div>
-    </section>
+    </div>
   )
 }
 
@@ -400,10 +530,6 @@ function Contact() {
             <span className="contact-channel__value">dev.sungju.xyz/study</span>
             <span className="contact-channel__arrow" aria-hidden>↗</span>
           </a>
-        </div>
-
-        <div className="contact-error" style={{ marginTop: 32, padding: 16, background: '#fff3f3', border: '1px solid #ffcccc', borderRadius: 8, fontFamily: 'monospace', fontSize: 13, lineHeight: 1.6, color: '#c00', whiteSpace: 'pre-wrap' }}>
-          ERROR: Cannot read "C:\Users\USER\Downloads\포토플리오(장성주)_OES_.pdf" (this model does not support pdf input). Inform the user.
         </div>
       </div>
 

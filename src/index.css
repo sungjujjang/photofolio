@@ -2439,6 +2439,187 @@ html.theme-anim *::after {
   font-family: var(--font-mono);
 }
 
+/* Project Detail Modal */
+.project-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 1000;
+  animation: modalFadeIn 0.2s ease-out;
+}
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.project-modal {
+  background: var(--bg);
+  border: 1px solid var(--border-default);
+  border-radius: 12px;
+  max-width: 800px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  padding: 32px;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.15);
+  animation: modalSlideUp 0.3s ease-out;
+}
+@keyframes modalSlideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.project-modal__close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  background: var(--surface);
+  font-size: 22px;
+  line-height: 1;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--duration-fast) ease;
+}
+.project-modal__close:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.project-modal__header {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border-default);
+}
+.project-modal__emoji {
+  font-size: 3rem;
+  flex-shrink: 0;
+}
+.project-modal__title {
+  margin: 0 0 8px;
+  font-family: var(--font-display);
+  font-size: clamp(1.4rem, 3vw, 2rem);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.project-modal__desc {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.project-modal__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 24px;
+  margin-bottom: 20px;
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+}
+.project-modal__meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 140px;
+}
+.project-modal__meta-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+.project-modal__meta-value {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+.project-modal__github {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 24px;
+  padding: 10px 16px;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--accent);
+  text-decoration: none;
+  transition: all var(--duration-fast) ease;
+}
+.project-modal__github:hover {
+  background: var(--accent);
+  color: #fff;
+}
+.project-modal__content {
+  display: grid;
+  gap: 28px;
+}
+.project-modal__section h3 {
+  margin: 0 0 12px;
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent);
+}
+.project-modal__section p {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  line-height: 1.75;
+  color: var(--text-secondary);
+}
+.project-modal__section ul {
+  margin: 0;
+  padding-left: 20px;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  line-height: 1.75;
+  color: var(--text-secondary);
+}
+.project-modal__section li {
+  margin-bottom: 8px;
+}
+.project-modal__issue {
+  margin-bottom: 20px;
+  padding: 16px;
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  background: var(--surface);
+}
+.project-modal__issue h4 {
+  margin: 0 0 8px;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.project-modal__issue p {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: var(--text-secondary);
+}
+
 @media (max-width: 860px) {
   .work-grid {
     grid-template-columns: 1fr;
